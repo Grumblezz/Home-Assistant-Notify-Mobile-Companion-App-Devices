@@ -18,8 +18,10 @@ I tried to add as many options as I went along (all options are from the [Introd
 
 
 ## Then what?
-+ Go to the Settings → Automations & Scenes → Scripts and add/save the script [![Open your Home Assistant instance and show your scripts.](https://my.home-assistant.io/badges/scripts.svg)](https://my.home-assistant.io/redirect/scripts/)
-+ Go to the Developer Tools → Services and test the script [![Open your Home Assistant instance and show your service developer tools.](https://my.home-assistant.io/badges/developer_services.svg)](https://my.home-assistant.io/redirect/developer_services/)
++ Copy the content of the [script](/notify_devices.yaml)
++ Go to the Settings → Automations & Scenes → Scripts and add & save the new script [![Open your Home Assistant instance and show your scripts.](https://my.home-assistant.io/badges/scripts.svg)](https://my.home-assistant.io/redirect/scripts/)
+
++ Go to the Developer Tools → Services and test the new script [![Open your Home Assistant instance and show your service developer tools.](https://my.home-assistant.io/badges/developer_services.svg)](https://my.home-assistant.io/redirect/developer_services/)
   + Use the 'Go to YAML mode' and click on the "Fill example data" to send notification example to all mobile devices :nerd_face:
   + Try out the examples (at the end of this article)
 + Use the script in your automation to send notifications to your mobile device :partying_face: :partying_face: :partying_face:
