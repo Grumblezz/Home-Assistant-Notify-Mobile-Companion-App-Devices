@@ -96,8 +96,8 @@ sequence:
 
               {% if manufacturer=="Apple" and data_critical is defined %} {% if
               data_critical==True %} {% set
-              data_critical={"name":"default","critical":1,"volume":1}%} {% set
-              ns.data=ns.data+[("sound",data_critical)]%} {%endif%} {%endif%}
+              ns.data=ns.data+[("push",{"sound":{"name":"default","critical":1,"volume":1}})]%}
+              {%endif%} {%endif%}
 
               {% if data_importance is defined%} {% set
               ns.data=ns.data+[("priority",data_importance)]%} {% if
@@ -132,11 +132,18 @@ sequence:
               search(".mp4",ignorecase=true))%}  {% set
               ns.data=ns.data+[("audio",data_camera)]%} {%endif%} {%endif%}
 
-              {% if data_ios_sound is defined and manufacturer=="Apple"%} {% if
-              data_ios_sound_volumelevel is not defined and
-              manufacturer=="Apple"%} {% set data_ios_sound_volumelevel=0.5
-              %}{%endif%} {% set
-              ns.data=ns.data+[("push",{"sound":{"name":data_ios_sound,"volume":data_ios_sound_volumelevel}})]%}
+              {% if data_ios_sound is defined and manufacturer=="Apple"%} 
+              {% if data_ios_sound_volumelevel is not defined and manufacturer=="Apple"%} 
+              {% set data_ios_sound_volumelevel=0.5 %}{%endif%}
+
+              {% set ns.data=ns.data+[("push",{"sound":{"name":data_ios_sound,"volume":data_ios_sound_volumelevel}})]%}
+
+              {% if data_critical is defined and data_critical==True%}
+              {% if data_ios_sound_volumelevel is not defined %}
+              {% set data_ios_sound_volumelevel=1 %}
+              {%endif%}
+              {% set ns.data=ns.data+[("push",{"sound":{"name":data_ios_sound,"critical":1,"volume":data_ios_sound_volumelevel}})]%}
+              {%endif%}
               {%endif%}
 
               {% if data_actions is defined%} {% set
@@ -363,7 +370,8 @@ fields:
     description: >-
       Adding a custom sound to a notification allows you to easily identify the
       notification without even looking at your device. You must use the full
-      filename (including extension) in the payload. If "iOS Only - Sound Volume Level" is not defined, then it will set the default sound level to 50%
+      filename (including extension) in the payload. If "iOS Only - Sound Volume
+      Level" is not defined, then it will set the default sound level to 50%
     example: US-EN-Morgan-Freeman-Roommate-Is-Arriving.wav
     required: false
     selector:
@@ -764,7 +772,9 @@ fields:
         multiple: false
   data_ios_sound_volumelevel:
     name: iOS Only - Sound Volume Level (Optional)
-    description: The volume level of notification, were 1 equal to 100% volume. It requires iOS only - Sounds to be defined.
+    description: >-
+      The volume level of notification, were 1 equal to 100% volume. It requires
+      iOS only - Sounds to be defined.
     required: false
     example: 0.5
     selector:
