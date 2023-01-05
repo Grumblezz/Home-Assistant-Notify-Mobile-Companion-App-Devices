@@ -1,0 +1,813 @@
+alias: Notify Mobile Companion App Devices
+sequence:
+  - variables:
+      all_devices: >-
+        {%if notify_devices is defined%}{{notify_devices}}{%else%}{%set
+        ns_devices = namespace(device_id=[])%}{%for e in
+        (expand(integration_entities("mobile_app"))|selectattr("domain","in","device_tracker")|map(attribute="entity_id")|list)%}{%set
+        ns_devices.device_id=ns_devices.device_id+[device_id(e)]%}{%endfor%}{{ns_devices.device_id}}{%endif%}
+      notify_entities_all: >-
+        {%set ns_notify=namespace(entity=[])%}{%for d in all_devices%}{%set
+        ns_notify.entity=ns_notify.entity+[((expand(device_entities(d))|selectattr("domain","in","device_tracker")|map(attribute="entity_id")|list))[0]|replace("device_tracker.","")]%}{%endfor%}{{ns_notify.entity}}
+      notify_entities_home: >-
+        {%set ns_notify=namespace(entity=[])%}{%for d in
+        notify_entities_all%}{%if states("device_tracker."~d)=="home"%}{%set
+        ns_notify.entity=ns_notify.entity+[d]%}{%endif%}{%endfor%}{{ns_notify.entity}}
+      notify_entities_away: >-
+        {%set ns_notify=namespace(entity=[])%}{%for d in
+        notify_entities_all%}{%if states("device_tracker."~d)!="home"%}{%set
+        ns_notify.entity=ns_notify.entity+[d]%}{%endif%}{%endfor%}{{ns_notify.entity}}
+      notify_entities: >-
+        {%if notify_home_or_away=="Home"%}{{notify_entities_home}}{%endif%}{%if
+        notify_home_or_away=="Away"%}{{notify_entities_away}}{%endif%}{%if
+        notify_home_or_away=="Both"%}{{notify_entities_all}}{%endif%}
+  - repeat:
+      for_each: "{{notify_entities}}"
+      sequence:
+        - variables:
+            entity_id: "{{\"device_tracker.\"~repeat.item}}"
+            manufacturer: "{{device_attr(device_id(entity_id),\"manufacturer\")}}"
+        - variables:
+            servicedata: >-
+              {% set ns=namespace(servicedata=[],data=[]) %} {% if notify_title
+              is defined and notify_message=="TTS" %} {% set
+              ns.data=ns.data+[("tts_text",notify_title)] %} {%endif%} {% if
+              data_channel is defined %} {% set
+              ns.data=ns.data+[("channel",data_channel)] %} {%endif%} {% if
+              data_device_ring is defined %} {% set
+              ns.data=ns.data+[("ttl",0)]%} {% set
+              ns.data=ns.data+[("priority","high")]%} {% if
+              data_device_ring=="On" and notify_message=="TTS" %} {% set
+              ns.data=ns.data+[("media_stream","alarm_stream")]%} {%endif%} {%
+              if data_device_ring=="On" and notify_message!="TTS" %} {% set
+              ns.data=ns.data+[("channel","alarm_stream")]%} {%endif%} {% if
+              data_device_ring=="Max" and notify_message=="TTS" %} {% set
+              ns.data=ns.data+[("media_stream","alarm_stream_max")]%} {%endif%}
+              {%endif%}
+
+              {% if data_notification_icon is defined %} {% set
+              ns.data=ns.data+[("notification_icon",data_notification_icon)] %}
+              {%endif%}
+
+              {% if data_group is defined %} {% set
+              ns.data=ns.data+[("group",data_group)] %} {%endif%}
+
+              {% if data_tag is defined %} {% set
+              ns.data=ns.data+[("tag",data_tag)] %}  {%endif%}
+
+
+              {% if data_persistent is defined %} {% set
+              ns.data=ns.data+[("persistent",data_persistent)] %}  {% if
+              data_persistent==true and data_tag is not defined%}  {% set
+              ns.data=ns.data+["tag","persistent"] %} {%endif%}{%endif%} {% if
+              data_tag is defined and data_tag=="persistent" and
+              notify_message!="clear_notification" %} {% set
+              ns.data=ns.data+[("persistent",true)] %} {%endif%}
+
+              {% if manufacturer=="Apple" and data_subtitle is defined%} {% set
+              ns.data=ns.data+[("subtitle",data_subtitle)]%} {%endif%}  {% if
+              manufacturer!="Apple" and data_subtitle is defined%} {% set
+              ns.data=ns.data+[("subject",data_subtitle)]%} {%endif%}  {#
+              https://companion.home-assistant.io/docs/notifications/notifications-basic#notification-color
+              #}  {% if manufacturer!="Apple" and data_notification_color is
+              defined %} {% set
+              ns.data=ns.data+[("color",data_notification_color)]%} {%endif%} 
+              {#
+              https://companion.home-assistant.io/docs/notifications/notifications-basic#notification-sensitivity--lock-screen-visibility
+              #}  {% if manufacturer!="Apple" and data_visibility is defined %}
+              {% set ns.data=ns.data+[("visibility",data_visibility)]%}
+              {%endif%}
+
+              {% if manufacturer!="Apple" %} {% if data_clickaction is defined
+              %} {% set
+              ns.data=ns.data+[("clickAction","entityId:"~data_clickaction)]%}
+              {%endif%} {% if data_clickaction_url is defined %} {% set
+              ns.data=ns.data+[("clickAction",data_clickaction_url)]%} {%endif%}
+              {%endif%}
+
+              {% if manufacturer!="Apple" %}  {% if data_chronometer is defined
+              %}  {% set ns.data=ns.data+[("chronometer",true)] %} {% set
+              ns.data=ns.data+[("when",as_timestamp(data_chronometer,
+              default=now())|int)]%} {%endif%} {%endif%}
+
+              {% if manufacturer=="Apple" %} {% if data_clickaction_url is
+              defined %} {% set ns.data=ns.data+[("url",data_clickaction_url)]%}
+              {%endif%} {%endif%}
+
+              {% if manufacturer=="Apple" and data_critical is defined %} {% if
+              data_critical==True %} {% set
+              data_critical={"name":"default","critical":1,"volume":1}%} {% set
+              ns.data=ns.data+[("sound",data_critical)]%} {%endif%} {%endif%}
+
+              {% if data_importance is defined%} {% set
+              ns.data=ns.data+[("priority",data_importance)]%} {% if
+              data_importance=="high" or data_importance=="max"%} {% set
+              ns.data=ns.data+[("ttl",0)]%} {%endif%}{%endif%}  {% if
+              data_timeout is defined%} {% set
+              ns.data=ns.data+[("timeout",data_timeout)]%} {%endif%} {% if
+              data_sticky is defined%} {% set
+              ns.data=ns.data+[("sticky",data_sticky)]%} {%endif%}
+
+              {% if data_camera is defined%} {% if states(data_camera) !=
+              "unknown" %} {% set
+              ns.data=ns.data+[("image","/api/camera_proxy/"~data_camera)]%}
+              {%endif%} {% if states(data_camera) == "unknown" and data_camera
+              is search("/api/nest/event_media/",ignorecase=False) %} {% set
+              ns.data=ns.data+[("image",data_camera)]%} {% set
+              ns.data=ns.data+[("video",data_camera)]%} {%endif%} {% if
+              manufacturer=="Apple" and states(data_camera) != "unknown" %}  {%
+              set ns.data=ns.data+[("entity_id",data_camera)]%} {%endif%} {% if
+              data_camera is search(".jpg",ignorecase=true) or data_camera is
+              search(".gif",ignorecase=true) or data_camera is
+              search(".png",ignorecase=true)%}  {% set
+              ns.data=ns.data+[("image",data_camera)]%} {%endif%} {% if
+              data_camera is search(".mp4",ignorecase=true) or data_camera is
+              search(".mpeg",ignorecase=true) or data_camera is
+              search(".avi",ignorecase=true)%}  {% set
+              ns.data=ns.data+[("video",data_camera)]%} {%endif%} {% if
+              manufacturer=="Apple" and (data_camera is
+              search(".mp3",ignorecase=true) or data_camera is
+              search(".aiff",ignorecase=true) or data_camera is
+              search(".wav",ignorecase=true) or data_camera is
+              search(".mp4",ignorecase=true))%}  {% set
+              ns.data=ns.data+[("audio",data_camera)]%} {%endif%} {%endif%}
+
+              {% if data_ios_sound is defined and manufacturer=="Apple"%} {% if
+              data_ios_sound_volumelevel is not defined and
+              manufacturer=="Apple"%} {% set data_ios_sound_volumelevel=0.5
+              %}{%endif%} {% set
+              ns.data=ns.data+[("push",{"sound":{"name":data_ios_sound,"volume":data_ios_sound_volumelevel}})]%}
+              {%endif%}
+
+              {% if data_actions is defined%} {% set
+              ns.data=ns.data+[("actions",data_actions)]%} {%endif%} {% if
+              notify_title is defined and notify_message!="TTS"%} {% set
+              ns.servicedata=ns.servicedata+[("title",notify_title)]%} {%endif%}
+              {% set
+              ns.servicedata=ns.servicedata+[("message",notify_message)]%}  {%
+              set
+              ns.servicedata=ns.servicedata+[("data",dict.from_keys(ns.data))]%}
+              {{dict.from_keys(ns.servicedata)}}
+        - service: notify.mobile_app_{{repeat.item}}
+          data: "{{servicedata}}"
+fields:
+  notify_devices:
+    name: Device to notify
+    description: >-
+      Device needs to run the official Home Assistant app to receive
+      notifications. If not specified, then all devices are used.
+    required: false
+    selector:
+      device:
+        multiple: true
+        integration: mobile_app
+  notify_home_or_away:
+    name: Notify those that are Home or Away?
+    required: true
+    example: Both
+    selector:
+      select:
+        multiple: false
+        mode: dropdown
+        options:
+          - Home
+          - Away
+          - Both
+  data_notification_icon:
+    name: Android Only - Notification icon (Optional)
+    required: false
+    description: Changing the default notification status bar icon
+    example: mdi:motion-outline
+    selector:
+      icon: null
+  notify_title:
+    name: Notification title (Optional)
+    description: Notification title, required when used with TTS
+    example: Frontdoor
+    required: false
+    selector:
+      template: null
+  data_subtitle:
+    name: Notification Subtitle / subject (Optional)
+    description: Subtitles and subjects are secondary headings
+    required: false
+    example: Subtitle goes here
+    selector:
+      text:
+        multiline: false
+        type: text
+  notify_message:
+    name: Notification message
+    required: true
+    description: Notification message
+    example: There is somebody at the door!
+    selector:
+      select:
+        options:
+          - TTS
+          - remove_channel
+          - clear_notification
+          - There is somebody at the door!
+          - There is somebody in the garden!
+        custom_value: true
+        multiple: false
+  data_group:
+    name: Notification grouping (Optional)
+    description: Combine notification together visually.
+    required: false
+    example: Motion
+    selector:
+      select:
+        options:
+          - Alarm
+          - Example
+          - Motion
+        custom_value: true
+        multiple: false
+  data_channel:
+    name: Notification channel (Optional)
+    description: Notification channel
+    required: false
+    example: Motion
+    selector:
+      select:
+        options:
+          - Motion Detected
+          - default
+          - Importance
+          - Cover
+          - Alarm
+          - Birthday
+          - Door
+          - Person Detected
+          - Doorbell Ring
+          - Updates
+          - Vacuum
+          - Fan
+        custom_value: true
+        multiple: false
+  data_tag:
+    name: Notification tag (Optional)
+    description: Notification tag
+    required: false
+    example: backyard-motion-detected
+    selector:
+      select:
+        options:
+          - backyard-motion-detected
+          - alarm
+          - doorbell
+          - updates
+          - motion
+          - cover
+          - fan
+        custom_value: true
+        multiple: false
+  data_importance:
+    name: Important notification
+    description: >-
+      Notifications will appear immediately in most cases. However, in some
+      cases (such as phone being stationary or when screen has been turned off
+      for prolonged period of time) and this is to override that default
+      behavior
+    required: false
+    example: high
+    selector:
+      select:
+        options:
+          - high
+  data_device_ring:
+    name: Device Ring (Optional)
+    description: >-
+      Make the device ring even if on vibrate/silent ringer mode. Max will only
+      work for TTS messages
+    required: false
+    example: "On"
+    selector:
+      select:
+        options:
+          - "On"
+          - Max
+        multiple: false
+  data_visibility:
+    name: Android only - Lock Screen Visibility (Optional)
+    required: false
+    description: How much of a notification is visible on the lock screen
+    example: public
+    selector:
+      select:
+        options:
+          - public
+          - private
+          - secret
+        custom_value: false
+        multiple: false
+  data_sticky:
+    name: Android Only - Keep notification? (Optional)
+    description: Keep the notification from being dismissed when the user selects it
+    example: true
+    required: false
+    selector:
+      boolean: null
+  data_persistent:
+    name: Android Only - Persistent notification? (Optional)
+    description: >-
+      Persistent notifications are notifications that cannot be dismissed by
+      swiping away. It requires the Notification tag to be set. If not set it
+      will set it to persistent.
+    example: true
+    required: false
+    selector:
+      boolean: null
+  data_timeout:
+    name: Android Only - Timeout message in seconds (Optional)
+    description: >-
+      How many seconds a notification will be shown on a users device before
+      being removed/dismissed automatically.
+    required: false
+    example: 120
+    selector:
+      number:
+        min: 0
+        max: 600
+        step: 10
+        mode: slider
+  data_chronometer:
+    name: Android Only - Notifications with a count up/down timer (Optional)
+    example: "\"{{now()+timedelta(minutes=1)}}\""
+    description: >-
+      Show a count up/down timer. Notification will not disappear when the timer
+      reaches 0. Instead, it will continue decrementing into negative values.
+    required: false
+    selector:
+      datetime: null
+  data_notification_color:
+    name: Android only - Color of the notification icon (Optional)
+    required: false
+    description: In Android you can set the color of the notification icon
+    example: red
+    selector:
+      color_rgb: null
+  data_critical:
+    name: iOS only - Critical notification? (Optional)
+    description: >-
+      Critical alerts always appear at the top of your lock screen above all
+      other notifications, and play a sound even if Do Not Disturb is enabled or
+      the iPhone is muted.
+    example: true
+    required: false
+    selector:
+      boolean: null
+  data_ios_sound:
+    name: iOS only - Sounds? (Optional)
+    description: >-
+      Adding a custom sound to a notification allows you to easily identify the
+      notification without even looking at your device. You must use the full
+      filename (including extension) in the payload. If "iOS Only - Sound Volume Level" is not defined, then it will set the default sound level to 50%
+    example: US-EN-Morgan-Freeman-Roommate-Is-Arriving.wav
+    required: false
+    selector:
+      select:
+        options:
+          - default
+          - 3rdParty_DirectionDown_Haptic.caf
+          - 3rdParty_DirectionUp_Haptic.caf
+          - 3rdParty_Failure_Haptic.caf
+          - 3rdParty_Retry_Haptic.caf
+          - 3rdParty_Start_Haptic.caf
+          - 3rdParty_Stop_Haptic.caf
+          - 3rdParty_Success_Haptic.caf
+          - access_scan_complete.caf
+          - AccessSanComplete_Haptic
+          - acknowledgment_received.caf
+          - acknowledgment_sent.caf
+          - alarm.caf
+          - Alarm_Haptic.caf
+          - Alarm_Nightstand_Haptic.caf
+          - Alert_3rdParty_Haptic.caf
+          - Alert_3rdParty_Salient_Haptic.caf
+          - Alert_ActivityFriendsGoalAttained_Haptic.caf
+          - Alert_ActivityGoalAttained_Haptic.caf
+          - Alert_ActivityGoalAttained_Salient_Haptic.caf
+          - Alert_ActivityGoalBehind_Haptic.caf
+          - Alert_ActivityGoalBehind_Salient_Haptic.caf
+          - Alert_ActivityGoalClose_Haptic.caf
+          - Alert_BatteryLow_10p_Haptic.caf
+          - Alert_BatteryLow_5p_Haptic.caf
+          - Alert_BatteryLow_5p_Salient_Haptic.caf
+          - Alert_Calendar_Haptic.caf
+          - Alert_Calendar_Salient_Haptic.caf
+          - Alert_Health_Haptic.caf
+          - Alert_Mail_Haptic.caf
+          - Alert_Mail_Salient_Haptic.caf
+          - Alert_MapsDirectionsInApp_Haptic.caf
+          - Alert_Messages_1_Haptic.caf
+          - Alert_Messages_1_Salient_Haptic.caf
+          - Alert_Messages_2_Haptic.caf
+          - Alert_Messages_3_Haptic.caf
+          - Alert_PassbookBalance_Haptic.caf
+          - Alert_PassbookGeofence_Haptic.caf
+          - Alert_PassbookGeofence_Salient_Haptic.caf
+          - Alert_PhotostreamActivity_Haptic.caf
+          - Alert_ReminderDue_Haptic.caf
+          - Alert_ReminderDue_Salient_Haptic.caf
+          - Alert_SpartanConnected_LowLatency_Haptic.caf
+          - Alert_SpartanConnecting_Haptic.caf
+          - Alert_SpartanConnecting_LowLatency_Haptic.caf
+          - Alert_SpartanDisconnected_LowLatency_Haptic.caf
+          - Alert_Voicemail_Haptic.caf
+          - Alert_Voicemail_Salient_Haptic.caf
+          - Alert_WalkieTalkie_Haptic.caf
+          - Anticipate.caf
+          - AutoUnlock_Haptic.caf
+          - BatteryMagsafe_Haptic.caf
+          - Beat_Haptic.caf
+          - begin_record.caf
+          - Bloom.caf
+          - BuddyMigrationStart_Haptic.caf
+          - BuddyPairingFailure_Haptic.caf
+          - BuddyPairingRemoteConnection_Haptic.caf
+          - BuddyPairingRemoteTap_Haptic.caf
+          - BuddyPairingSuccess_Haptic.caf
+          - busy_tone_ansi.caf
+          - busy_tone_cept.caf
+          - call_waiting_tone_ansi.caf
+          - call_waiting_tone_cept.caf
+          - Calypso.caf
+          - camera_shutter_burst.caf
+          - camera_shutter_burst_begin.caf
+          - camera_shutter_burst_end.caf
+          - camera_timer_countdown.caf
+          - camera_timer_final_second.caf
+          - CameraCountdownImminent_Haptic.caf
+          - CameraCountdownTick_Haptic.caf
+          - CameraShutter_Haptic.caf
+          - Choo_Choo.caf
+          - connect_power.caf
+          - ct-busy.caf
+          - ct-call-waiting.caf
+          - ct-congestion.caf
+          - ct-error.caf
+          - ct-keytone2.caf
+          - ct-path-ack.caf
+          - Descent.caf
+          - Detent_Haptic.caf
+          - DoNotDisturb_Haptic.caf
+          - dtmf-0.caf
+          - dtmf-1.caf
+          - dtmf-2.caf
+          - dtmf-3.caf
+          - dtmf-4.caf
+          - dtmf-5.caf
+          - dtmf-6.caf
+          - dtmf-7.caf
+          - dtmf-8.caf
+          - dtmf-9.caf
+          - dtmf-pound.caf
+          - dtmf-star.caf
+          - end_call_tone_cept.caf
+          - end_record.caf
+          - engage_power.caf
+          - engage_power_short.caf
+          - ET_BeginNotification_Haptic.caf
+          - ET_BeginNotification_Salient_Haptic.caf
+          - ET_RemoteTap_Receive_Haptic.caf
+          - ET_RemoteTap_Send_Haptic.caf
+          - Fanfare.caf
+          - focus_change_app_icon.caf
+          - focus_change_keyboard.caf
+          - focus_change_large.caf
+          - focus_change_small.caf
+          - go_to_sleep_alert.caf
+          - GoToSleep_Haptic.caf
+          - HealthNotificaiton.caf
+          - HourlyChime_Haptic.caf
+          - HummingbirdCompletion_Haptic.caf
+          - HummingbirdNotification_Haptic.caf
+          - jbl_ambiguous.caf
+          - jbl_begin.caf
+          - jbl_cancel.caf
+          - jbl_confirm.caf
+          - jbl_no_match.caf
+          - key_press_click.caf
+          - key_press_delete.caf
+          - key_press_modifier.caf
+          - keyboard_press_clear.caf
+          - keyboard_press_delete.caf
+          - keyboard_press_normal.caf
+          - Ladder.caf
+          - lock.caf
+          - long_low_short_high.caf
+          - low_power.caf
+          - mail-sent.caf
+          - MessagesIncoming_Haptic.caf
+          - MessagesOutgoing_Haptic.caf
+          - middle_9_short_double_low.caf
+          - Minuet.caf
+          - multiway_invitation.caf
+          - MultiwayInvitation.caf
+          - MultiwayJoin.caf
+          - MultiwayLeave.caf
+          - navigation_pop.caf
+          - navigation_push.caf
+          - NavigationGenericManeuver_Haptic.caf
+          - NavigationGenericManeuver_Salient_Haptic.caf
+          - NavigationLeftTurn_Haptic.caf
+          - NavigationLeftTurn_Salient_Haptic.caf
+          - NavigationRightTurn_Haptic.caf
+          - NavigationRightTurn_Salient_Haptic.caf
+          - new-mail.caf
+          - News_Flash.caf
+          - nfc_scan_complete.caf
+          - Noir.caf
+          - Notification_Haptic.caf
+          - Notification_Salient_Haptic.caf
+          - OnOffPasscodeFailure_Haptic.caf
+          - OnOffPasscodeUnlock_Haptic.caf
+          - OnOffPasscodeUnlockCampanion_Haptic.caf
+          - OrbExit_Haptic.caf
+          - OrbLayers_Haptic.caf
+          - payment_failure.caf
+          - payment_success.caf
+          - PhoneAnswer_Haptic.caf
+          - PhoneHangUp_Haptic.caf
+          - PhoneHold_Haptic.caf
+          - photoShutter.caf
+          - PhotosZoomDetent_Haptic.caf
+          - Preview_AudioAndHaptic.caf
+          - QB_Dictation_Haptic.caf
+          - QB_Dictation_Off_Haptic.caf
+          - ReceivedMessage.caf
+          - RemoteCameraShutterBurstBegin_Haptic.caf
+          - RemoteCameraShutterBurstEnd_Haptic.caf
+          - ringback_tone_ansi.caf
+          - ringback_tone_aus.caf
+          - ringback_tone_cept.caf
+          - ringback_tone_hk.caf
+          - ringback_tone_uk.caf
+          - RingerChanged.caf
+          - Ringtone_2_Ducked_Haptic-sashimi.caf
+          - Ringtone_2_Haptic-sashimi.caf
+          - Ringtone_UK_Haptic.caf
+          - Ringtone_US_Haptic.caf
+          - RingtoneDucked_UK_Haptic.caf
+          - RingtoneDucked_US_Haptic.caf
+          - SalientNotification_Haptic.caf
+          - SedentaryTimer_Haptic.caf
+          - SedentaryTimer_Salient_Haptic.caf
+          - SentMessage.caf
+          - shake.caf
+          - Sherwood_Forest.caf
+          - short_double_high.caf
+          - short_double_low.caf
+          - short_low_high.caf
+          - SIMToolkitCallDropped.caf
+          - SIMToolkitGeneralBeep.caf
+          - SIMToolkitNegativeACK.caf
+          - SIMToolkitPositiveACK.caf
+          - SIMToolkitSMS.caf
+          - SiriAutoSend_Haptic.caf
+          - SiriStart_Haptic.caf
+          - SiriStopFailure_Haptic.caf
+          - SiriStopSuccess_Haptic.caf
+          - sms-received1.caf
+          - sms-received1.caf
+          - sms-received2.caf
+          - sms-received3.caf
+          - sms-received4.caf
+          - sms-received5.caf
+          - sms-received6.caf
+          - SOSEmergencyContactTextPrompt_Haptic.caf
+          - SOSFallDetection_Haptic-Newton.caf
+          - Spell.caf
+          - Stockholm_Haptic.caf
+          - StockholmActive_Haptic.caf
+          - StockholmActiveSingleCycle_Haptic.caf
+          - StockholmFailure_Haptic.caf
+          - StopwatchLap_Haptic.caf
+          - StopwatchReset_Haptic.caf
+          - StopwatchStart_Haptic.caf
+          - StopwatchStop_Haptic.caf
+          - Suspense.caf
+          - Swish.caf
+          - SwTest1_Haptic.caf
+          - SystemStartup_Haptic.caf
+          - Telegraph.caf
+          - Timer_Haptic.caf
+          - TimerCancel_Haptic.caf
+          - TimerPause_Haptic.caf
+          - TimerStart_Haptic.caf
+          - TimerWheelHoursDetent_Haptic.caf
+          - TimerWheelMinutesDetent_Haptic.caf
+          - Tink.caf
+          - Tiptoes.caf
+          - Tock.caf
+          - tweet_sent.caf
+          - Typewriters.caf
+          - UISwipe_Haptic.caf
+          - UISwitch_Off_Haptic.caf
+          - UISwitch_On_Haptic.caf
+          - Update.caf
+          - ussd.caf
+          - vc~ended.caf
+          - vc~invitation-accepted.caf
+          - vc~ringing.caf
+          - vc~ringing_watch.caf
+          - VoiceOver_Click_Haptic.caf
+          - WalkieTalkieActiveEnd_Haptic.caf
+          - WalkieTalkieActiveStart_Haptic.caf
+          - WalkieTalkieReceiveEnd_Haptic.caf
+          - WalkieTalkieReceiveStart_Haptic.caf
+          - warsaw.caf
+          - Warsaw_Haptic.caf
+          - wheels_of_time.caf
+          - WorkoutComplete_Haptic.caf
+          - WorkoutCompleteAutoDetect.caf
+          - WorkoutCountdown_Haptic.caf
+          - WorkoutPaceAbove.caf
+          - WorkoutPaceBelow.caf
+          - WorkoutPaused_Haptic.caf
+          - WorkoutPressStart_Haptic.caf
+          - WorkoutResumed_Haptic.caf
+          - WorkoutResumedAutoDetect.caf
+          - WorkoutSaved_Haptic.caf
+          - WorkoutSelect_Haptic.caf
+          - WorkoutStartAutoDetect.caf
+          - US-EN-Alexa-Back-Door-Opened.wav
+          - US-EN-Alexa-Back-Door-Unlocked.wav
+          - US-EN-Alexa-Basement-Door-Opened.wav
+          - US-EN-Alexa-Basement-Door-Unlocked.wav
+          - US-EN-Alexa-Boyfriend-Is-Arriving.wav
+          - US-EN-Alexa-Daughter-Is-Arriving.wav
+          - US-EN-Alexa-Front-Door-Opened.wav
+          - US-EN-Alexa-Front-Door-Unlocked.wav
+          - US-EN-Alexa-Garage-Door-Opened.wav
+          - US-EN-Alexa-Girlfriend-Is-Arriving.wav
+          - US-EN-Alexa-Good-Morning.wav
+          - US-EN-Alexa-Good-Night.wav
+          - US-EN-Alexa-Husband-Is-Arriving.wav
+          - US-EN-Alexa-Mail-Has-Arrived.wav
+          - US-EN-Alexa-Motion-At-Back-Door.wav
+          - US-EN-Alexa-Motion-At-Front-Door.wav
+          - US-EN-Alexa-Motion-Detected-Generic.wav
+          - US-EN-Alexa-Motion-In-Back-Yard.wav
+          - US-EN-Alexa-Motion-In-Basement.wav
+          - US-EN-Alexa-Motion-In-Front-Yard.wav
+          - US-EN-Alexa-Motion-In-Garage.wav
+          - US-EN-Alexa-Patio-Door-Opened.wav
+          - US-EN-Alexa-Patio-Door-Unlocked.wav
+          - US-EN-Alexa-Smoke-Detected-Generic.wav
+          - US-EN-Alexa-Smoke-Detected-In-Basement.wav
+          - US-EN-Alexa-Smoke-Detected-In-Garage.wav
+          - US-EN-Alexa-Smoke-Detected-In-Kitchen.wav
+          - US-EN-Alexa-Son-Is-Arriving.wav
+          - US-EN-Alexa-Water-Detected-Generic.wav
+          - US-EN-Alexa-Water-Detected-In-Basement.wav
+          - US-EN-Alexa-Water-Detected-In-Garage.wav
+          - US-EN-Alexa-Water-Detected-In-Kitchen.wav
+          - US-EN-Alexa-Welcome-Home.wav
+          - US-EN-Alexa-Wife-Is-Arriving.wav
+          - US-EN-Daisy-Back-Door-Motion.wav
+          - US-EN-Daisy-Back-Door-Open.wav
+          - US-EN-Daisy-Front-Door-Motion.wav
+          - US-EN-Daisy-Front-Door-Open.wav
+          - US-EN-Daisy-Front-Window-Open.wav
+          - US-EN-Daisy-Garage-Door-Open.wav
+          - US-EN-Daisy-Guest-Bath-Leak.wav
+          - US-EN-Daisy-Kitchen-Sink-Leak.wav
+          - US-EN-Daisy-Kitchen-Window-Open.wav
+          - US-EN-Daisy-Laundry-Room-Leak.wav
+          - US-EN-Daisy-Master-Bath-Leak.wav
+          - US-EN-Daisy-Master-Bedroom-Window-Open.wav
+          - US-EN-Daisy-Office-Window-Open.wav
+          - US-EN-Daisy-Refrigerator-Leak.wav
+          - US-EN-Daisy-Water-Heater-Leak.wav
+          - US-EN-Morgan-Freeman-Back-Door-Closed.wav
+          - US-EN-Morgan-Freeman-Back-Door-Locked.wav
+          - US-EN-Morgan-Freeman-Back-Door-Opened.wav
+          - US-EN-Morgan-Freeman-Back-Door-Unlocked.wav
+          - US-EN-Morgan-Freeman-Basement-Door-Closed.wav
+          - US-EN-Morgan-Freeman-Basement-Door-Locked.wav
+          - US-EN-Morgan-Freeman-Basement-Door-Opened.wav
+          - US-EN-Morgan-Freeman-Basement-Door-Unlocked.wav
+          - US-EN-Morgan-Freeman-Boss-Is-Arriving.wav
+          - US-EN-Morgan-Freeman-Boyfriend-Is-Arriving.wav
+          - US-EN-Morgan-Freeman-Cleaning-Supplies-Closet-Opened.wav
+          - US-EN-Morgan-Freeman-Coworker-Is-Arriving.wav
+          - US-EN-Morgan-Freeman-Daughter-Is-Arriving.wav
+          - US-EN-Morgan-Freeman-Friend-Is-Arriving.wav
+          - US-EN-Morgan-Freeman-Front-Door-Closed.wav
+          - US-EN-Morgan-Freeman-Front-Door-Locked.wav
+          - US-EN-Morgan-Freeman-Front-Door-Opened.wav
+          - US-EN-Morgan-Freeman-Front-Door-Unlocked.wav
+          - US-EN-Morgan-Freeman-Garage-Door-Closed.wav
+          - US-EN-Morgan-Freeman-Garage-Door-Opened.wav
+          - US-EN-Morgan-Freeman-Girlfriend-Is-Arriving.wav
+          - US-EN-Morgan-Freeman-Good-Morning.wav
+          - US-EN-Morgan-Freeman-Good-Night.wav
+          - US-EN-Morgan-Freeman-Liquor-Cabinet-Opened.wav
+          - US-EN-Morgan-Freeman-Motion-Detected.wav
+          - US-EN-Morgan-Freeman-Motion-In-Basement.wav
+          - US-EN-Morgan-Freeman-Motion-In-Bedroom.wav
+          - US-EN-Morgan-Freeman-Motion-In-Game-Room.wav
+          - US-EN-Morgan-Freeman-Motion-In-Garage.wav
+          - US-EN-Morgan-Freeman-Motion-In-Kitchen.wav
+          - US-EN-Morgan-Freeman-Motion-In-Living-Room.wav
+          - US-EN-Morgan-Freeman-Motion-In-Theater.wav
+          - US-EN-Morgan-Freeman-Motion-In-Wine-Cellar.wav
+          - US-EN-Morgan-Freeman-Patio-Door-Closed.wav
+          - US-EN-Morgan-Freeman-Patio-Door-Locked.wav
+          - US-EN-Morgan-Freeman-Patio-Door-Opened.wav
+          - US-EN-Morgan-Freeman-Patio-Door-Unlocked.wav
+          - US-EN-Morgan-Freeman-Roommate-Is-Arriving.wav
+          - US-EN-Morgan-Freeman-Searching-For-Car-Keys.wav
+          - US-EN-Morgan-Freeman-Setting-The-Mood.wav
+          - US-EN-Morgan-Freeman-Smartthings-Detected-A-Flood.wav
+          - US-EN-Morgan-Freeman-Smartthings-Detected-Carbon-Monoxide.wav
+          - US-EN-Morgan-Freeman-Smartthings-Detected-Smoke.wav
+          - US-EN-Morgan-Freeman-Smoke-Detected-In-Basement.wav
+          - US-EN-Morgan-Freeman-Smoke-Detected-In-Garage.wav
+          - US-EN-Morgan-Freeman-Smoke-Detected-In-Kitchen.wav
+          - US-EN-Morgan-Freeman-Someone-Is-Arriving.wav
+          - US-EN-Morgan-Freeman-Son-Is-Arriving.wav
+          - US-EN-Morgan-Freeman-Starting-Movie-Mode.wav
+          - US-EN-Morgan-Freeman-Starting-Party-Mode.wav
+          - US-EN-Morgan-Freeman-Starting-Romance-Mode.wav
+          - US-EN-Morgan-Freeman-Turning-Off-All-The-Lights.wav
+          - US-EN-Morgan-Freeman-Turning-Off-The-Air-Conditioner.wav
+          - US-EN-Morgan-Freeman-Turning-Off-The-Bar-Lights.wav
+          - US-EN-Morgan-Freeman-Turning-Off-The-Chandelier.wav
+          - US-EN-Morgan-Freeman-Turning-Off-The-Family-Room-Lights.wav
+          - US-EN-Morgan-Freeman-Turning-Off-The-Hallway-Lights.wav
+          - US-EN-Morgan-Freeman-Turning-Off-The-Kitchen-Light.wav
+          - US-EN-Morgan-Freeman-Turning-Off-The-Light.wav
+          - US-EN-Morgan-Freeman-Turning-Off-The-Lights.wav
+          - US-EN-Morgan-Freeman-Turning-Off-The-Mood-Lights.wav
+          - US-EN-Morgan-Freeman-Turning-Off-The-TV.wav
+          - US-EN-Morgan-Freeman-Turning-On-The-Air-Conditioner.wav
+          - US-EN-Morgan-Freeman-Turning-On-The-Bar-Lights.wav
+          - US-EN-Morgan-Freeman-Turning-On-The-Chandelier.wav
+          - US-EN-Morgan-Freeman-Turning-On-The-Family-Room-Lights.wav
+          - US-EN-Morgan-Freeman-Turning-On-The-Hallway-Lights.wav
+          - US-EN-Morgan-Freeman-Turning-On-The-Kitchen-Light.wav
+          - US-EN-Morgan-Freeman-Turning-On-The-Light.wav
+          - US-EN-Morgan-Freeman-Turning-On-The-Lights.wav
+          - US-EN-Morgan-Freeman-Turning-On-The-Mood-Lights.wav
+          - US-EN-Morgan-Freeman-Turning-On-The-TV.wav
+          - US-EN-Morgan-Freeman-Vacate-The-Premises.wav
+          - US-EN-Morgan-Freeman-Water-Detected-In-Basement.wav
+          - US-EN-Morgan-Freeman-Water-Detected-In-Garage.wav
+          - US-EN-Morgan-Freeman-Water-Detected-In-Kitchen.wav
+          - US-EN-Morgan-Freeman-Welcome-Home.wav
+          - US-EN-Morgan-Freeman-Wife-Is-Arriving.wav
+        custom_value: true
+        multiple: false
+  data_ios_sound_volumelevel:
+    name: iOS Only - Sound Volume Level (Optional)
+    description: The volume level of notification, were 1 equal to 100% volume. It requires iOS only - Sounds to be defined.
+    required: false
+    example: 0.5
+    selector:
+      number:
+        min: 0
+        max: 1
+        mode: slider
+  data_camera:
+    name: Camera (Optional)
+    description: The camera which creates the snapshot
+    required: false
+    selector:
+      entity:
+        domain: camera
+  data_clickaction:
+    name: Entity ID to navigate to (Optional)
+    description: The Entity to navigate to when clicking on the notification
+    required: false
+    selector:
+      entity: null
+  data_clickaction_url:
+    name: URL to navigate to (Optional)
+    description: The URL to navigate to when clicking on the notification
+    required: false
+    example: /lovelace/
+    selector:
+      text:
+        multiline: false
+        type: url
+  data_actions:
+    name: Custom Actions (Optional)
+    example: |-
+      - action: "ALARM" # The key you are sending for the event
+        title: "Sound Alarm" # The button title
+      - action: "URI" # Must be set to URI if you plan to use a URI
+        title: "Open Url"
+        uri: "https://google.com" # URL to open when action is selected, can also be a lovelace view/dashboard 
+    description: >-
+      See
+      https://www.home-assistant.io/docs/blueprint/selectors/#object-selector
+    required: false
+    selector:
+      object: null
+mode: parallel
+icon: mdi:cellphone-message
+max: 10
