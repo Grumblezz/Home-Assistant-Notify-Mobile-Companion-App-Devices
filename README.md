@@ -5,6 +5,8 @@ Ever gone through all of the options of the [Companion app](https://companion.ho
 
 And so I noticed over the last year or so that I made more and more use of the notifications via the Home Assistant Companion App on the various mobile devices, and I loved it so much that I applied it for many automations. During that journey I was struggling with adding and fixing the code in various automations (there are +/- 40 automations where I was using it) so maintaining all of it was a nightmare. And thus I made one script that has all the logic in it to notify all or specific devices, which have the app installed, and let the automation call the script. And meanwhile use the [selectors](https://www.home-assistant.io/docs/blueprint/selectors) to have a UI to guide the process with all sorts of options.
 
+![This is an image](./notify_devices.png)
+
 ***Note***
 *Most of our mobile devices at home are Android based, so the script is build to favour Android, but there are various options for the iOS users :nerd_face:.*
 
