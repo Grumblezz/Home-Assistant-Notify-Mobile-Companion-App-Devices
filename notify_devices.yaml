@@ -1,4 +1,4 @@
-alias: Notify Mobile Companion App Devices
+alias: Notify Mobile App Devices
 sequence:
   - variables:
       all_devices: >-
@@ -279,7 +279,7 @@ fields:
   data_device_ring:
     name: Device Ring (Optional)
     description: >-
-      Make the device ring even if on vibrate/silent ringer mode. Max will only
+      Make the device ring even if on vibrate/silent ringer mode. Max will Only
       work for TTS messages
     required: false
     example: "On"
@@ -290,7 +290,7 @@ fields:
           - Max
         multiple: false
   data_visibility:
-    name: Android only - Lock Screen Visibility (Optional)
+    name: Android Only - Lock Screen Visibility (Optional)
     required: false
     description: How much of a notification is visible on the lock screen
     example: public
@@ -342,14 +342,14 @@ fields:
     selector:
       datetime: null
   data_notification_color:
-    name: Android only - Color of the notification icon (Optional)
+    name: Android Only - Color of the notification icon (Optional)
     required: false
     description: In Android you can set the color of the notification icon
     example: red
     selector:
       color_rgb: null
   data_critical:
-    name: iOS only - Critical notification? (Optional)
+    name: iOS Only - Critical notification? (Optional)
     description: >-
       Critical alerts always appear at the top of your lock screen above all
       other notifications, and play a sound even if Do Not Disturb is enabled or
@@ -359,7 +359,7 @@ fields:
     selector:
       boolean: null
   data_ios_sound:
-    name: iOS only - Sounds? (Optional)
+    name: iOS Only - Sounds? (Optional)
     description: >-
       Adding a custom sound to a notification allows you to easily identify the
       notification without even looking at your device. You must use the full
