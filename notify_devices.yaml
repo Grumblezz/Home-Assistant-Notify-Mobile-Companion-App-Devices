@@ -58,7 +58,7 @@ sequence:
               {%-endif%} {{ns.results|select("equalto",True)|list|count>0}}
         - variables:
             servicedata: >-
-              {% set ns=namespace(servicedata=[],data=[],push=[],sound=[]) %}
+              {% set ns=namespace(servicedata=[],data=[],push=[],sound=[],actions=[]) %}
 
               {% if notify_title is defined and (notify_message|upper)=="TTS"
               %}  {% set ns.data=ns.data+[("tts_text",notify_title)] %}
@@ -160,28 +160,33 @@ sequence:
               [True,False,"true","false",0,1,"0","1","yes","no","enable","disable"]%}
               {% set ns.data=ns.data+[("sticky",bool(data_sticky))]%} {%endif%}
 
-              {% if data_camera is defined%} {% if states(data_camera) !=
-              "unknown" %} {% set
+              {% if data_camera is defined%} {% if
+              states(data_camera)!="unknown" %} {% set
               ns.data=ns.data+[("image","/api/camera_proxy/"~data_camera)]%}
               {%endif%} {% if states(data_camera) == "unknown" and data_camera
-              is search("/api/nest/event_media/",ignorecase=False) %} {% set
+              is search("/api/nest/event_media/",ignorecase=False) %} {% if
+              states(data_camera) == "unknown" and data_camera is
+              search("/thumbnail",ignorecase=False) %} {% set
               ns.data=ns.data+[("image",data_camera)]%} {% set
-              ns.data=ns.data+[("video",data_camera)]%} {%endif%} {% if
-              manufacturer=="Apple" and states(data_camera) != "unknown" %}  {%
-              set ns.data=ns.data+[("entity_id",data_camera)]%} {%endif%} {% if
-              data_camera is search(".jpg",ignorecase=true) or data_camera is
-              search(".gif",ignorecase=true) or data_camera is
-              search(".png",ignorecase=true)%}  {% set
-              ns.data=ns.data+[("image",data_camera)]%} {%endif%} {% if
+              ns.data=ns.data+[("video",(data_camera|replace("/thumbnail","")))]%}
+              {%endif%} {% if states(data_camera) == "unknown" and
+              (data_camera|regex_match('^((\/)(\w+)){5}$', ignorecase=False)) %}
+              {% set ns.data=ns.data+[("video",data_camera)]%} {%endif%}
+              {%endif%} {% if manufacturer=="Apple" and states(data_camera) !=
+              "unknown" %} {% set ns.data=ns.data+[("entity_id",data_camera)]%}
+              {%endif%}  {% if data_camera is search(".jpg",ignorecase=true) or
+              data_camera is search(".gif",ignorecase=true) or data_camera is
+              search(".png",ignorecase=true)%}   {% set
+              ns.data=ns.data+[("image",data_camera)]%} {%endif%}  {% if
               data_camera is search(".mp4",ignorecase=true) or data_camera is
               search(".mpeg",ignorecase=true) or data_camera is
-              search(".avi",ignorecase=true)%}  {% set
-              ns.data=ns.data+[("video",data_camera)]%} {%endif%} {% if
+              search(".avi",ignorecase=true)%}   {% set
+              ns.data=ns.data+[("video",data_camera)]%} {%endif%}  {% if
               manufacturer=="Apple" and (data_camera is
               search(".mp3",ignorecase=true) or data_camera is
               search(".aiff",ignorecase=true) or data_camera is
               search(".wav",ignorecase=true) or data_camera is
-              search(".mp4",ignorecase=true))%}  {% set
+              search(".mp4",ignorecase=true))%}   {% set
               ns.data=ns.data+[("audio",data_camera)]%} {%endif%} {%endif%}
 
               {% if data_ios_sound is defined and manufacturer=="Apple"%} {% set
@@ -223,8 +228,20 @@ sequence:
               ns.data=ns.data+[("presentation_options",list.allowed_value)] %}
               {%endif%}
 
-              {% if data_actions is defined%}  {% set
-              ns.data=ns.data+[("actions",data_actions)]%} {%endif%}
+              {% if data_actions is defined%} 
+              {% for action in data_actions %}
+              {%if action['uri'] is defined and manufacturer=="Apple" and (action['uri'] is search("app://",ignorecase=False) or action['uri'] is search("intent://",ignorecase=False) or action['uri'] is search("deep-link://",ignorecase=False) or action['uri'] is search("entityId:",ignorecase=False) or action['uri'] is search("settings://",ignorecase=False)) %}
+              {%else%}
+              {%if (action['action']=="CALL" or action['action']=="OPEN") and manufacturer!="Apple" and (action['uri'] is search("https://",ignorecase=False) or action['uri'] is search("tel:",ignorecase=False)) %}
+              {%else%}
+              {%set ns.actions=ns.actions+[(action)]%}
+              {%endif%}
+              {%endif%}
+              {%endfor%}
+              {% if ns.actions|count>=1%}
+              {% set ns.data=ns.data+[("actions",ns.actions)]%}
+              {%endif%}
+              {%endif%}
 
               {% if (ns.sound|count)>=1 %} {% set
               ns.push=ns.push+[("sound",dict.from_keys(ns.sound))]%} {%endif%}
