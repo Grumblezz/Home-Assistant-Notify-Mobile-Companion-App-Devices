@@ -1,4 +1,4 @@
-alias: Notify Mobile App Devices
+alias: Notify Mobile App Devices (Dev)
 sequence:
   - variables:
       all_devices: >-
@@ -58,7 +58,9 @@ sequence:
               {%-endif%} {{ns.results|select("equalto",True)|list|count>0}}
         - variables:
             servicedata: >-
-              {% set ns=namespace(servicedata=[],data=[],push=[],sound=[],actions=[]) %}
+              {% set
+              ns=namespace(servicedata=[],data=[],push=[],sound=[],actions=[],hex_color="#")
+              %}
 
               {% if notify_title is defined and (notify_message|upper)=="TTS"
               %}  {% set ns.data=ns.data+[("tts_text",notify_title)] %}
@@ -104,8 +106,11 @@ sequence:
               ns.data=ns.data+[("subtitle",data_subtitle)]%} {%endif%}  {% if
               manufacturer!="Apple" and data_subtitle is defined%} {% set
               ns.data=ns.data+[("subject",data_subtitle)]%} {%endif%}   {% if
-              manufacturer!="Apple" and data_notification_color is defined %} {%
-              set ns.data=ns.data+[("color",data_notification_color)]%}
+              manufacturer!="Apple" and data_notification_color is defined %} 
+              {% for color in data_notification_color %}
+              {% set ns.hex_color=ns.hex_color+('%02x'%color)%}
+              {%endfor%}
+              {% set ns.data=ns.data+[("color",ns.hex_color)]%}
               {%endif%}  {% if manufacturer!="Apple" and data_visibility is
               defined %} {% if data_visibility|lower in
               ["public","private","secret"] %} {% set
@@ -228,20 +233,20 @@ sequence:
               ns.data=ns.data+[("presentation_options",list.allowed_value)] %}
               {%endif%}
 
-              {% if data_actions is defined%} 
-              {% for action in data_actions %}
-              {%if action['uri'] is defined and manufacturer=="Apple" and (action['uri'] is search("app://",ignorecase=False) or action['uri'] is search("intent://",ignorecase=False) or action['uri'] is search("deep-link://",ignorecase=False) or action['uri'] is search("entityId:",ignorecase=False) or action['uri'] is search("settings://",ignorecase=False)) %}
-              {%else%}
-              {%if (action['action']=="CALL" or action['action']=="OPEN") and manufacturer!="Apple" and (action['uri'] is search("https://",ignorecase=False) or action['uri'] is search("tel:",ignorecase=False)) %}
-              {%else%}
-              {%set ns.actions=ns.actions+[(action)]%}
-              {%endif%}
-              {%endif%}
-              {%endfor%}
-              {% if ns.actions|count>=1%}
-              {% set ns.data=ns.data+[("actions",ns.actions)]%}
-              {%endif%}
-              {%endif%}
+              {% if data_actions is defined%}  {% for action in data_actions %}
+              {%if action['uri'] is defined and manufacturer=="Apple" and
+              (action['uri'] is search("app://",ignorecase=False) or
+              action['uri'] is search("intent://",ignorecase=False) or
+              action['uri'] is search("deep-link://",ignorecase=False) or
+              action['uri'] is search("entityId:",ignorecase=False) or
+              action['uri'] is search("settings://",ignorecase=False)) %}
+              {%else%} {%if (action['action']=="CALL" or
+              action['action']=="OPEN") and manufacturer!="Apple" and
+              (action['uri'] is search("https://",ignorecase=False) or
+              action['uri'] is search("tel:",ignorecase=False)) %} {%else%}
+              {%set ns.actions=ns.actions+[(action)]%} {%endif%} {%endif%}
+              {%endfor%} {% if ns.actions|count>=1%} {% set
+              ns.data=ns.data+[("actions",ns.actions)]%} {%endif%} {%endif%}
 
               {% if (ns.sound|count)>=1 %} {% set
               ns.push=ns.push+[("sound",dict.from_keys(ns.sound))]%} {%endif%}
