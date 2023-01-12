@@ -1,4 +1,4 @@
-alias: Notify Mobile App Devices (Dev)
+alias: Notify Mobile App Devices
 sequence:
   - variables:
       all_devices: >-
