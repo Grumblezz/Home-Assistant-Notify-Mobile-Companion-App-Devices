@@ -15,7 +15,7 @@ sequence:
       notify_devices_away: >-
         {% set ns_devices=namespace(device_id=[])%} {%for device_id in
         all_devices%} {% if
-        states((device_entities(device_id)|select("search","device_tracker")|list)[0])=="away"%}
+        states((device_entities(device_id)|select("search","device_tracker")|list)[0])=="not_home"%}
         {% set ns_devices.device_id=ns_devices.device_id+[device_id]%}
         {%endif%}{%endfor%}{{ns_devices.device_id}}
       notify_devices: >-
