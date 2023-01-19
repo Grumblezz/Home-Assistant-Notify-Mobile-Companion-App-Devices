@@ -192,6 +192,7 @@ blueprint:
   domain: script
   homeassistant:
     min_version: 2022.1.0
+  source_url: https://github.com/Grumblezz/Home-Assistant-Notify-Mobile-Companion-App-Devices/blob/main/notify_devices.yaml
 mode: parallel
 max: 10
 icon: mdi:cellphone-message
