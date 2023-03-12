@@ -1,4 +1,4 @@
-# Home-Assistant-Notify-Mobile-Companion-App-Devices
+# Home Assistant - Notify Mobile Companion App Devices
 **Struggling to make use of the notification options of the [Home Assistant Companion App](https://companion.home-assistant.io) on your mobile device? Then this script can help you in the right direction.**
 
 Ever gone through all of the options of the [Companion app](https://companion.home-assistant.io/docs/notifications/notifications-basic)?, then you may have lost your self :thinking: in all of the options you can pick you might be dazzled :dizzy_face: what you can do with it, let alone reapply it in another automation :confused:.
