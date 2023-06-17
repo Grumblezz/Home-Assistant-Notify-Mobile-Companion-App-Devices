@@ -1,6 +1,6 @@
 blueprint:
   name: Notify Mobile App Devices
-  description: >-
+  description: |-
     **Struggling to make use of the notification options of the [Home Assistant Companion App](https://companion.home-assistant.io/) on your mobile device?**
     **Then this script can help you in the right direction.**
     ***
@@ -1052,7 +1052,7 @@ sequence:
               {%- set ns.data=ns.data+[("chronometer",true)] -%}
               {%- endif -%}
 
-              {%- set ns.data=ns.data+[("when",when)] -%}
+              {%- set ns.data=ns.data+[("when",(when|int|string()))] -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/critical-notifications/#ios -#}
               {%- if manufacturer=="Apple" and data_critical is defined -%}
