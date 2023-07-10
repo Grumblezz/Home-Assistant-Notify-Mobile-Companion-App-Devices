@@ -201,7 +201,7 @@ fields:
         multiple: false
   notify_in_car_using_tts:
     name: Android Only - Notify using TTS whilst using Andriod Auto? (Optional)
-    description: Upgrade the notification message to a TTS message, when the `binary_sensor.###_android_auto` is `on`. This can be useful whilst driving with Android Auto that the notification that you are sending is announched via TTS.
+    description: Upgrade the notification message to a TTS message, when the `binary_sensor.###_android_auto` is `on`. This can be useful whilst driving with Android Auto that the notification that you are sending is announced via TTS.
     example: true
     required: false
     selector:
