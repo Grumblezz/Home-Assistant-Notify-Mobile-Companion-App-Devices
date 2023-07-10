@@ -14,7 +14,7 @@ blueprint:
        * Away
        * Both (Home and Away)
      * Send notifications to Android and iOS devices (!). The script then filters the input to what is supported per platform. Thus Android features are not send to iOS devices and visa versa.
-     * Send notifications with actionable actions. The script then filters the actions per  platform. Thus Android actions are not send to iOS devices and visa versa.
+     * Send notifications with actionable actions. The script then filters the actions per platform. Thus Android actions are not send to iOS devices and visa versa.
      * Support notifications with camera images/live feed for camera devices, also for [Google Nest camera devices](https://www.home-assistant.io/integrations/nest/) (!).
     ***
     ### Background ###
@@ -199,6 +199,13 @@ fields:
           - There is somebody in the garden!
         custom_value: true
         multiple: false
+  notify_in_car_using_tts:
+    name: Android Only - Notify using TTS whilst using Andriod Auto? (Optional)
+    description: Upgrade the notification message to a TTS message, when the `binary_sensor.###_android_auto` is `on`. This can be useful whilst driving with Android Auto that the notification that you are sending is announched via TTS.
+    example: true
+    required: false
+    selector:
+      boolean: null
   data_group:
     name: Notification grouping (Optional)
     description: Combine notification together visually.
@@ -877,6 +884,8 @@ sequence:
             manufacturer: '{{device_attr(repeat.item,"manufacturer")}}'
             service: notify.mobile_app_{{entity_id|replace("device_tracker.","")}}
             device_name: '{{device_attr(repeat.item,"name")}}'
+            entities: >-
+              {{device_entities(repeat.item)}}
             do_not_disturb: >-
               {# ============== #}
               {# IN DEVELOPMENT #}
@@ -936,12 +945,42 @@ sequence:
               {# from the list of true and false statements only check the true statements #}
               {# if there are true statements then it results in true otherwise false #}
               {{ns.results|select("equalto",True)|list|count>0}}
-        - variables:
-            servicedata: >-
+            notify_car_ui: >-
+              {%- if manufacturer != "Apple" -%}
+              {%- if entities is defined and (entities|count>=1) and (entities|select('search','_android_auto')|list|count==1) -%}
+              {% set notify_car_ui=iif(states((entities|select("search","_android_auto")|list)[0])=="on",true,false)%}
+              {%- endif -%}
+              {%- else -%}
+              {% set notify_car_ui=false%}
+              {%- endif -%}
+              {{notify_car_ui}}
         - variables:
             servicedata: >-
               {# object which stores all options -#}
               {%- set ns=namespace(servicedata=[],data=[],push=[],sound=[],actions=[],hex_color="#") -%}
+
+              {%- if notify_message is not defined -%}
+              {%- set notify_message='The `notify_message` field was not defined. What have you forgotten this time 🙂?' -%}
+              {%- endif -%}
+
+              {#- https://companion.home-assistant.io/docs/notifications/notifications-basic/#android-auto-visibility-beta -#}
+              {%- if manufacturer!="Apple" and notify_car_ui is defined and bool(notify_car_ui,false)==true and notify_message is defined and notify_message!='TTS' -%}
+              {%- set ns.data=ns.data+[("car_ui",bool(notify_car_ui,false))] -%}
+              {%- endif -%}
+
+              {#- Android only - When the device is connected to Android auto then you can use TTS to anounce the message. Be aware that actions don't work. -#}
+              {%- if manufacturer != "Apple" -%}
+              {%- if (entities|select('search','_android_auto')|list|count==1) -%}
+              {%- if (states((entities|select("search","_android_auto")|list)[0])=="on") -%}
+              {%- if notify_in_car_using_tts is defined and bool(notify_in_car_using_tts,false)==true and notify_message is defined and notify_message!='TTS' -%}
+              {% set notify_title=notify_message %}
+              {% set notify_message='TTS' %}
+              {%- endif -%}
+              {%- endif -%}
+              {%- endif -%}
+              {%- endif -%}
+
+
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic/#notification-channels -#}
               {%- if data_channel is defined -%}
               {%- set ns.data=ns.data+[("channel",data_channel)] -%}
