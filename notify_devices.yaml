@@ -1,5 +1,22 @@
 blueprint:
   name: Notify Mobile App Devices
+  domain: script
+  homeassistant:
+    min_version: 2023.6.0
+  source_url: https://github.com/Grumblezz/Home-Assistant-Notify-Mobile-Companion-App-Devices/blob/main/notify_devices.yaml
+  author: Grumblezz
+  input:
+    notify_message_actions_text:
+      name: Android Only - Enter a custom Text to Speech text used to anounch the actions, when your device is connected to the Android Auto.
+      description: When you mobile device is connect to Android Auto then you can enable the 'Android Only - Notify using TTS whilst using Andriod Auto?'. And when you have actions defined then you can announce them by this introduction sentence. [The TTS current support is limited to the current Text To Speech locale set on the device](https://companion.home-assistant.io/docs/notifications/notifications-basic#text-to-speech-notifications).
+      default: Select one of the following actions on your phone
+      selector:
+        select:
+          options:
+            - Select 1 of the following actions on your phone
+            - Selecteer 1 van de volgende acties op je telefoon
+          custom_value: true
+          multiple: false
   description: |-
     **Struggling to make use of the notification options of the [Home Assistant Companion App](https://companion.home-assistant.io/) on your mobile device?**
     **Then this script can help you in the right direction.**
@@ -14,7 +31,7 @@ blueprint:
        * Away
        * Both (Home and Away)
      * Send notifications to Android and iOS devices (!). The script then filters the input to what is supported per platform. Thus Android features are not send to iOS devices and visa versa.
-     * Send notifications with actionable actions. The script then filters the actions per  platform. Thus Android actions are not send to iOS devices and visa versa.
+     * Send notifications with actionable actions. The script then filters the actions per platform. Thus Android actions are not send to iOS devices and visa versa.
      * Support notifications with camera images/live feed for camera devices, also for [Google Nest camera devices](https://www.home-assistant.io/integrations/nest/) (!).
     ***
     ### Background ###
@@ -133,13 +150,11 @@ blueprint:
           title: "Call - iOS only"
           uri: "tel:2125551212"
     ```
-  domain: script
-  homeassistant:
-    min_version: 2022.1.0
-  source_url: https://github.com/Grumblezz/Home-Assistant-Notify-Mobile-Companion-App-Devices/blob/main/notify_devices.yaml
+
 mode: parallel
 max: 10
 icon: mdi:cellphone-message
+
 fields:
   notify_devices:
     name: Device to notify
@@ -199,6 +214,13 @@ fields:
           - There is somebody in the garden!
         custom_value: true
         multiple: false
+  notify_in_car_using_tts:
+    name: Android Only - Notify using TTS whilst using Andriod Auto? (Optional)
+    description: Upgrade the notification message to a TTS message, when the `binary_sensor.###_android_auto` is `on`. This can be useful whilst driving with Android Auto that the notification that you are sending is announched via TTS.
+    example: true
+    required: false
+    selector:
+      boolean: null
   data_group:
     name: Notification grouping (Optional)
     description: Combine notification together visually.
@@ -339,7 +361,12 @@ fields:
       boolean: null
   data_ios_sound:
     name: iOS Only - Sounds? (Optional)
-    description: Adding a custom sound to a notification allows you to easily identify the notification without even looking at your device. You must use the full filename (including extension) in the payload. If "iOS Only - Sound Volume Level" is not defined, then it will set the default sound level to 50%
+    description:
+      TTS is [not supported on iOS](https://companion.home-assistant.io/docs/notifications/notifications-basic#text-to-speech-notifications) so the workaround is by using custom sounds.
+      For more information click [here](https://companion.home-assistant.io/docs/notifications/notification-sounds#custom-push-notification-sounds).
+      Adding a custom sound to a notification allows you to easily identify the notification without even looking at your device.
+      You must use the full filename (including extension) in the payload.
+      If "iOS Only - Sound Volume Level" is not defined, then it will set the default sound level to 50%
     example: US-EN-Morgan-Freeman-Roommate-Is-Arriving.wav
     required: false
     selector:
@@ -824,10 +851,22 @@ fields:
       - action: "URI" # Must be set to URI if you plan to use a URI
         title: "Open Url"
         uri: "https://google.com" # URL to open when action is selected, can also be a lovelace view/dashboard
-    description: See https://companion.home-assistant.io/docs/notifications/actionable-notifications#building-actionable-notifications
+    description: See [building-actionable-notifications](https://companion.home-assistant.io/docs/notifications/actionable-notifications#building-actionable-notifications)
     required: false
     selector:
       object: null
+  # notify_message_actions_text:
+  #   name: Android Only - Enter a custom Text to Speech text used to anounch the actions, when your device is connected to the Android Auto.
+  #   description: When you mobile device is connect to Android Auto then you can enable the 'Android Only - Notify using TTS whilst using Andriod Auto?'. And when you have actions defined then you can announce them by this introduction sentence. [The TTS current support is limited to the current Text To Speech locale set on the device](https://companion.home-assistant.io/docs/notifications/notifications-basic#text-to-speech-notifications).
+  #   required: false
+  #   default: Select one of the following actions on your phone
+  #   selector:
+  #     select:
+  #       options:
+  #         - Select 1 of the following actions on your phone
+  #         - Selecteer 1 van de volgende acties op je telefoon
+  #       custom_value: true
+  #       multiple: false
 sequence:
   - variables:
       all_devices: >-
@@ -877,6 +916,8 @@ sequence:
             manufacturer: '{{device_attr(repeat.item,"manufacturer")}}'
             service: notify.mobile_app_{{entity_id|replace("device_tracker.","")}}
             device_name: '{{device_attr(repeat.item,"name")}}'
+            entities: >-
+              {{device_entities(repeat.item)}}
             do_not_disturb: >-
               {# ============== #}
               {# IN DEVELOPMENT #}
@@ -936,12 +977,28 @@ sequence:
               {# from the list of true and false statements only check the true statements #}
               {# if there are true statements then it results in true otherwise false #}
               {{ns.results|select("equalto",True)|list|count>0}}
-        - variables:
-            servicedata: >-
+            notify_car_ui: >-
+              {% set notify_car_ui=false%}
+              {%- if manufacturer != "Apple" -%}
+              {%- if entities is defined and (entities|count>=1) and (entities|select('search','_android_auto')|list|count==1) -%}
+              {% set notify_car_ui=iif(states((entities|select("search","_android_auto")|list)[0])=="on",true,false)%}
+              {%- endif -%}
+              {%- endif -%}
+              {{notify_car_ui}}
         - variables:
             servicedata: >-
               {# object which stores all options -#}
               {%- set ns=namespace(servicedata=[],data=[],push=[],sound=[],actions=[],hex_color="#") -%}
+
+              {%- if notify_message is not defined -%}
+              {%- set notify_message='The `notify_message` field was not defined. What have you forgotten this time 🙂?' -%}
+              {%- endif -%}
+
+              {#- https://companion.home-assistant.io/docs/notifications/notifications-basic/#android-auto-visibility-beta -#}
+              {%- if manufacturer!="Apple" and notify_car_ui is defined and bool(notify_car_ui,false)==true and notify_message is defined and notify_message!='TTS' -%}
+              {%- set ns.data=ns.data+[("car_ui",bool(notify_car_ui,false))] -%}
+              {%- endif -%}
+
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic/#notification-channels -#}
               {%- if data_channel is defined -%}
               {%- set ns.data=ns.data+[("channel",data_channel)] -%}
@@ -1250,6 +1307,47 @@ sequence:
               {%- set ns.servicedata=ns.servicedata+[("message",notify_message)] -%}
               {%- set ns.servicedata=ns.servicedata+[("data",dict.from_keys(ns.data))] -%}
               {#- Finally show the results as an DICT -#}
-              {{dict.from_keys(ns.servicedata)}}
+              {%- set servicedata=dict.from_keys(ns.servicedata) -%}
+              {{- servicedata }}
         - service: "{{service}}"
           data: "{{servicedata}}"
+        - if:
+            - condition: template
+              value_template: >-
+                {{manufacturer != "Apple" and 
+                entities is defined and 
+                (entities|select('search','_android_auto')|list|count==1) and 
+                (states((entities|select("search","_android_auto")|list)[0])=="on") and 
+                notify_in_car_using_tts is defined and 
+                bool(notify_in_car_using_tts,false)==true and 
+                notify_message is defined and 
+                notify_message!='TTS'}}
+          then:
+            - variables:
+                notify_message_actions_text: !input notify_message_actions_text
+                servicedata: >-
+                  {#- If actions are defined then process each action title and add it to the notify_message -#}
+                  {%- if servicedata['data']['actions'] is defined -%}
+                  {%- set ns=namespace(actions=[]) -%}
+                  {%- for action in servicedata['data']['actions'] -%}
+                  {%- set ns.actions=ns.actions+[(action['title'])] -%}
+                  {%- endfor -%}
+                  {%- if notify_message_actions_text is not defined or notify_message_actions_text==None -%}
+                  {%- set notify_message_actions_text='Select one of the following actions on your phone' -%}
+                  {%- endif -%}
+                  {%- set notify_message_actions='. '~notify_message_actions_text~': '~ns.actions|join(', or ')-%}
+                  {%- set notify_message=notify_message~notify_message_actions -%}
+                  {%- endif -%}
+
+                  {#- Create a data dict with the previous servicedata['data'] information and add to the data the tts_text -#}
+                  {#- The tts_text is what will be used for TTS -#}
+                  {%- set servicedata=dict((servicedata),**({'data':dict(servicedata['data'],**{'tts_text':notify_message})})) -%}
+
+                  {#- Create the whole servicedata dict with the previous data information and replace the message with the TTS value -#}
+                  {%- set servicedata=dict((servicedata),**({'message':'TTS'})) -%}
+
+                  {#- Finally remove the old title from the dict -#}
+                  {%- set servicedata=dict.from_keys(servicedata.items()|rejectattr('0','in','title')|list)%}
+                  {{servicedata}}
+            - service: "{{service}}"
+              data: "{{servicedata}}"
