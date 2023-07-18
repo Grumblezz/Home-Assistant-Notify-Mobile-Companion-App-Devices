@@ -941,7 +941,7 @@ sequence:
               {#- build a list of true and false statements -#}
               {%- if manufacturer == "Apple" -%}
               {#- -------------- -#}
-              {#- Apple          -#}}
+              {#- Apple          -#}
               {#- -------------- -#}
               {#- check if the entity_id binary_sensor.<device>_focus is enabled -#}
               {%- if(entities|select("search","_focus")|list|count==1) -%}
@@ -957,12 +957,12 @@ sequence:
               {%- if (entities|select("search","_ringer_mode")|list|count==1) -%}
               {%- set ringer_mode=states((entities|select("search","_ringer_mode")|list)[0]) -%}
               {%- set ns.results=ns.results+[(ringer_mode!="normal")] -%}
-              {%- endif%}
+              {%- endif -%}
               {#- check if the entity_id sensor.<device>_do_not_disturb_sensor is enabled -#}
               {%- if (entities|select("search","_do_not_disturb_sensor")|list|count==1) -%}
               {%- set do_not_disturb_sensor=states((entities|select("search","_do_not_disturb_sensor")|list)[0]) -%}
               {%- set ns.results=ns.results+[(do_not_disturb_sensor!="off")] -%}
-              {%- endif%}
+              {%- endif -%}
               {#- check if the entity_id sensor.<device>_audio_mode is enabled -#}
               {%- if (entities|select("search","_audio_mode")|list|count==1) -%}
               {%- set audio_mode=states((entities|select("search","_audio_mode")|list)[0]) -%}
