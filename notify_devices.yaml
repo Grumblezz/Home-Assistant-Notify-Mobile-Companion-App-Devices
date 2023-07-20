@@ -93,7 +93,7 @@ blueprint:
       data_sticky: true
       data_camera: camera.name
     ```
-     Sends a Nest camera image file 
+    Sends a Nest camera image file 
     ```
     service: script.notify_devices
     data:
@@ -162,8 +162,9 @@ fields:
     required: false
     selector:
       device:
+        filter:
+          - integration: mobile_app
         multiple: true
-        integration: mobile_app
   notify_home_or_away:
     name: Notify those that are Home or Away?
     required: true
@@ -178,16 +179,23 @@ fields:
           - Both
   data_notification_icon:
     name: Android Only - Notification icon (Optional)
-    required: false
     description: Changing the default notification status bar icon
+    required: false
     example: mdi:motion-outline
     selector:
       icon: null
+  data_notification_color:
+    name: Android Only - Color of the notification icon (Optional)
+    description: In Android you can set the color of the notification icon
+    required: false
+    example: "[255,0,0]"
+    selector:
+      color_rgb: null
   notify_title:
     name: Notification title (Optional)
     description: Notification title, required when used with TTS
-    example: Frontdoor
     required: false
+    example: Frontdoor
     selector:
       template: null
   data_subtitle:
@@ -201,8 +209,8 @@ fields:
         type: text
   notify_message:
     name: Notification message
-    required: true
     description: Notification message
+    required: true
     example: There is somebody at the door!
     selector:
       select:
@@ -217,8 +225,9 @@ fields:
   notify_in_car_using_tts:
     name: Android Only - Notify using TTS whilst using Andriod Auto? (Optional)
     description: Upgrade the notification message to a TTS message, when the `binary_sensor.###_android_auto` is `on`. This can be useful whilst driving with Android Auto that the notification that you are sending is announched via TTS.
-    example: true
     required: false
+    example: >-
+      true
     selector:
       boolean: null
   data_group:
@@ -235,8 +244,8 @@ fields:
         custom_value: true
         multiple: false
   data_channel:
-    name: Notification channel (Optional)
-    description: Notification channel
+    name: Android Only - Notification channel (Optional)
+    description: Notification channels allows users to separate their notifications easily (i.e. alarm vs laundry) so they can customize aspects like what type of sound is made and a lot of other device specific features.Devices running Android 8.0+ are able to create and manage notification channels on the fly using automations. Once a channel is created you can navigate to your notification settings and you will find the newly created channel, from there you can customize the behavior based on what your device allows.
     required: false
     example: Motion
     selector:
@@ -258,7 +267,7 @@ fields:
         multiple: false
   data_tag:
     name: Notification tag (Optional)
-    description: Notification tag
+    description: Replace an existing notification by using a tag for the notification. All subsequent notifications will take the place of a notification with the same tag.
     required: false
     example: backyard-motion-detected
     selector:
@@ -295,8 +304,8 @@ fields:
         multiple: false
   data_visibility:
     name: Android Only - Lock Screen Visibility (Optional)
-    required: false
     description: How much of a notification is visible on the lock screen
+    required: false
     example: public
     selector:
       select:
@@ -309,22 +318,25 @@ fields:
   data_sticky:
     name: Android Only - Keep notification? (Optional)
     description: Keep the notification from being dismissed when the user selects it
-    example: true
     required: false
+    example: >-
+      true
     selector:
       boolean: null
   data_persistent:
     name: Android Only - Persistent notification? (Optional)
     description: Persistent notifications are notifications that cannot be dismissed by swiping away. It requires the Notification tag to be set. If not set it will set it to persistent.
-    example: true
     required: false
+    example: >-
+      true
     selector:
       boolean: null
   data_timeout:
     name: Android Only - Timeout message in seconds (Optional)
     description: How many seconds a notification will be shown on a users device before being removed/dismissed automatically.
     required: false
-    example: 120
+    example: >-
+      120
     selector:
       number:
         min: 0
@@ -341,22 +353,17 @@ fields:
   data_chronometer_enable:
     name: Android Only - (when combined with data_chronometer) Enable the Notifications timer with a count up/down timer (Optional)
     description: Show a count up/down timer. Notification will not disappear when the timer reaches 0. Instead, it will continue decrementing into negative values.
-    example: true
     required: false
+    example: >-
+      true
     selector:
       boolean: null
-  data_notification_color:
-    name: Android Only - Color of the notification icon (Optional)
-    required: false
-    description: In Android you can set the color of the notification icon
-    example: "[255,0,0]"
-    selector:
-      color_rgb: null
   data_critical:
     name: iOS Only - Critical notification? (Optional)
     description: Critical alerts always appear at the top of your lock screen above all other notifications, and play a sound even if Do Not Disturb is enabled or the iPhone is muted.
-    example: true
     required: false
+    example: >-
+      true
     selector:
       boolean: null
   data_ios_sound:
@@ -367,8 +374,8 @@ fields:
       Adding a custom sound to a notification allows you to easily identify the notification without even looking at your device.
       You must use the full filename (including extension) in the payload.
       If "iOS Only - Sound Volume Level" is not defined, then it will set the default sound level to 50%
-    example: US-EN-Morgan-Freeman-Roommate-Is-Arriving.wav
     required: false
+    example: US-EN-Morgan-Freeman-Roommate-Is-Arriving.wav
     selector:
       select:
         options:
@@ -769,7 +776,8 @@ fields:
     name: iOS Only - Sound Volume Level (Optional)
     description: The volume level of notification, were 1 equal to 100% volume. It requires iOS only - Sounds to be defined.
     required: false
-    example: 0.5
+    example: >-
+      0.5
     selector:
       number:
         min: 0
@@ -780,7 +788,8 @@ fields:
     name: iOS Only - Badge (Optional)
     required: false
     description: Set the app icon badge in the payload. It will make the app icon badge show the number
-    example: 5
+    example: >-
+      5
     selector:
       number:
         min: 0
@@ -820,7 +829,8 @@ fields:
     required: false
     selector:
       entity:
-        domain: camera
+        filter:
+          domain: camera
   data_clickaction:
     name: Entity ID to navigate to (Optional)
     description: The Entity to navigate to when clicking on the notification
@@ -855,133 +865,134 @@ fields:
     required: false
     selector:
       object: null
-  # notify_message_actions_text:
-  #   name: Android Only - Enter a custom Text to Speech text used to anounch the actions, when your device is connected to the Android Auto.
-  #   description: When you mobile device is connect to Android Auto then you can enable the 'Android Only - Notify using TTS whilst using Andriod Auto?'. And when you have actions defined then you can announce them by this introduction sentence. [The TTS current support is limited to the current Text To Speech locale set on the device](https://companion.home-assistant.io/docs/notifications/notifications-basic#text-to-speech-notifications).
-  #   required: false
-  #   default: Select one of the following actions on your phone
-  #   selector:
-  #     select:
-  #       options:
-  #         - Select 1 of the following actions on your phone
-  #         - Selecteer 1 van de volgende acties op je telefoon
-  #       custom_value: true
-  #       multiple: false
 sequence:
   - variables:
       all_devices: >-
-        {% if notify_devices is defined %}
-        {# If the user uses the field "notify_devices" then use that/those device(s) #}
-        {{ notify_devices }}
-        {% else %}
-        {# If the user does not use the field "notify_devices" then find the device_tracker(s) that use the integration mobile_app #}
-        {% set ns_devices=namespace( device_id=[] ) %}
-        {% for e in (integration_entities("mobile_app")|select("search","device_tracker")|list) %}
-        {% set ns_devices.device_id=ns_devices.device_id+[device_id(e)] %}
-        {% endfor %}
-        {{ ns_devices.device_id }}
-        {% endif %}
+        {%- if notify_devices is defined -%}
+        {#- If the user uses the field "notify_devices" then use that/those device(s) -#}
+        {%- set all_devices=notify_devices -%}
+        {%- else -%}
+        {#- If the user does not use the field "notify_devices" then find the device_tracker(s) that use the integration mobile_app -#}
+        {%- set ns_devices=namespace( device_id=[] ) -%}
+        {%- for e in (integration_entities("mobile_app")|select("search","device_tracker")|list) -%}
+        {%- set ns_devices.device_id=ns_devices.device_id+[device_id(e)] -%}
+        {%- endfor -%}
+        {%- set all_devices=ns_devices.device_id -%}
+        {%- endif -%}
+        {{all_devices}}
       notify_devices_home: >-
-        {# filter "all_devices" whether those that have the state "home" #}
-        {% set ns_devices=namespace( device_id=[] ) %}
-        {% for device_id in all_devices %}
-        {% if states((device_entities(device_id)|select("search","device_tracker")|list)[0]) == "home" %}
-        {% set ns_devices.device_id=ns_devices.device_id + [device_id] %}
-        {% endif %}
-        {% endfor %}
-        {{ ns_devices.device_id }}
+        {#- filter "all_devices" whether those that have the state "home" -#}
+        {%- set ns_devices_home=namespace( device_id=[] ) -%}
+        {%- for device_id in all_devices -%}
+        {%- if states((device_entities(device_id)|select("search","device_tracker")|list)[0]) == "home" -%}
+        {%- set ns_devices_home.device_id=ns_devices_home.device_id + [device_id] -%}
+        {%- endif -%}
+        {%- endfor -%}
+        {%- set notify_devices_home=ns_devices_home.device_id -%}
+        {{notify_devices_home}}
       notify_devices_away: >-
-        {# filter "all_devices" whether those that do not have the state "home" #}
-        {% set ns_devices=namespace( device_id=[]) %}
-        {% for device_id in all_devices %}
-        {% if states((device_entities(device_id)|select("search","device_tracker")|list)[0]) != "home" %}
-        {% set ns_devices.device_id=ns_devices.device_id + [device_id] %}
-        {% endif %}
-        {% endfor %}
-        {{ ns_devices.device_id }}
+        {#- filter "all_devices" whether those that do not have the state "home" -#}
+        {%- set ns_devices_away=namespace( device_id=[]) -%}
+        {%- for device_id in all_devices -%}
+        {%- if states((device_entities(device_id)|select("search","device_tracker")|list)[0]) != "home" -%}
+        {%- set ns_devices_away.device_id=ns_devices_away.device_id + [device_id] -%}
+        {%- endif -%}
+        {%- endfor -%}
+        {%- set notify_devices_away=ns_devices_away.device_id -%}
+        {{notify_devices_away}}
       notify_devices: >-
-        {% if notify_home_or_away is not defined or notify_home_or_away not in ["Home","Away","Both"] %}
-        {% set notify_home_or_away="Both" %}
-        {% endif %}
-        {# Finally, let the value "notify_home_or_away" control which list should used #}
-        {% if notify_home_or_away == "Home" %}{{ notify_devices_home }}{% endif %}
-        {% if notify_home_or_away == "Away" %}{{ notify_devices_away }}{% endif %}
-        {% if notify_home_or_away == "Both" %}{{ all_devices }}{% endif %}
+        {%- if notify_home_or_away is not defined or notify_home_or_away not in ["Home","Away","Both"] -%}
+        {%- set notify_home_or_away="Both" -%}
+        {%- endif -%}
+        {#- Finally, let the value "notify_home_or_away" control which list should used -#}
+        {%- if notify_home_or_away == "Home" -%}{%- set notify_devices=notify_devices_home -%}{%- endif -%}
+        {%- if notify_home_or_away == "Away" -%}{%- set notify_devices=notify_devices_away -%}{%- endif -%}
+        {%- if notify_home_or_away == "Both" -%}{%- set notify_devices=all_devices -%}{%- endif -%}
+        {{notify_devices}}
   - repeat:
       for_each: "{{notify_devices}}"
       sequence:
         - variables:
             entity_id: >-
-              {{((device_entities(repeat.item)|select("search","device_tracker")|list)[0])}}
-            manufacturer: '{{device_attr(repeat.item,"manufacturer")}}'
-            service: notify.mobile_app_{{entity_id|replace("device_tracker.","")}}
-            device_name: '{{device_attr(repeat.item,"name")}}'
+              {%- set entity_id=((device_entities(repeat.item)|select("search","device_tracker")|list)[0]) -%}
+              {{entity_id}}
+            manufacturer: >-
+              {%- set manufacturer=device_attr(repeat.item,"manufacturer") -%}
+              {{manufacturer}}
+            service: >-
+              {%- set service='notify.mobile_app_'~(entity_id|replace("device_tracker.","")) -%}
+              {{service}}
+            device_name: >-
+              {%- set device_name=device_attr(repeat.item,"name") -%}
+              {{device_name}}
             entities: >-
-              {{device_entities(repeat.item)}}
+              {%- set entities=device_entities(repeat.item) -%}
+              {{entities}}
             do_not_disturb: >-
-              {# ============== #}
-              {# IN DEVELOPMENT #}
-              {# ============== #}
-              {# Usefull for a condition to skip the notification #}
-              {# It requires the following entities of the device to be enabled: #}
-              {# -------------- #}
-              {# Apple #}
-              {# -------------- #}
-              {# * binary_sensor.<device>_focus = off/on #}
-              {# -------------- #}
-              {# Android #}
-              {# -------------- #}
-              {# * sensor.<device>_ringer_mode = normal/vibrate #}
-              {# * sensor.<device>_do_not_disturb_sensor = off/priority_only #}
-              {# * sensor.<device>_audio_mode = normal/in_call #}
-              {# * binary_sensor.<device>_music_active = off/on #}
-              {# ============== #}
-              {% set entities=device_entities(repeat.item) %}
-              {% set ns=namespace(results=[]) %}
-              {# build a list of true and false statements #}
-              {% if manufacturer == "Apple" %}
-              {# -------------- #}
-              {# Apple #}
-              {# -------------- #}
-              {# check if the entity_id binary_sensor.<device>_focus is enabled #}
-              {% if(entities|select("search","_focus")|list|count==1) %}
-              {# binary_sensor.<device>_focus = off/on #}
-              {% set setfocus=states((entities|select("search","_focus")|list)[0]) %}
-              {% set ns.results=ns.results+[(focus=="on")] %}
-              {% endif %}
-              {% else %}
-              {# -------------- #}
-              {# Android #}
-              {# -------------- #}
-              {# check if the entity_id sensor.<device>_ringer_mode is enabled #}
-              {% if (entities|select("search","_ringer_mode")|list|count==1) %}
-              {% set ringer_mode=states((entities|select("search","_ringer_mode")|list)[0]) %}
-              {% set ns.results=ns.results+[(ringer_mode!="normal")] %}
-              {% endif%}
-              {# check if the entity_id sensor.<device>_do_not_disturb_sensor is enabled #}
-              {% if (entities|select("search","_do_not_disturb_sensor")|list|count==1) %}
-              {% set do_not_disturb_sensor=states((entities|select("search","_do_not_disturb_sensor")|list)[0]) %}
-              {% set ns.results=ns.results+[(do_not_disturb_sensor!="off")] %}
-              {% endif%}
-              {# check if the entity_id sensor.<device>_audio_mode is enabled #}
-              {% if (entities|select("search","_audio_mode")|list|count==1) %}
-              {% set audio_mode=states((entities|select("search","_audio_mode")|list)[0]) %}
-              {% set ns.results=ns.results+[(audio_mode!="normal")] %}
-              {% endif %}
-              {# check if the entity_id binary_sensor.<device>_music_active is enabled #}
-              {% if (entities|select("search","_music_active")|list|count==1) %}
-              {% set music_active=states((entities|select("search","_music_active")|list)[0]) %}
-              {% set ns.results=ns.results+[(music_active=="on")] %}
-              {% endif %}
-              {% endif %}
-              {# from the list of true and false statements only check the true statements #}
-              {# if there are true statements then it results in true otherwise false #}
-              {{ns.results|select("equalto",True)|list|count>0}}
+              {#- ============== -#}
+              {#- IN DEVELOPMENT -#}
+              {#- ============== -#}
+              {#- Usefull for a condition to skip the notification -#}
+              {#- It requires the following entities of the device to be enabled: -#}
+              {#- -------------- -#}
+              {#- Apple          -#}
+              {#- -------------- -#}
+              {#- * binary_sensor.<device>_focus = off/on -#}
+              {#- -------------- -#}
+              {#- Android        -#}
+              {#- -------------- -#}
+              {#- * sensor.<device>_ringer_mode = normal/vibrate -#}
+              {#- * sensor.<device>_do_not_disturb_sensor = off/priority_only -#}
+              {#- * sensor.<device>_audio_mode = normal/in_call -#}
+              {#- * binary_sensor.<device>_music_active = off/on -#}
+              {#- ============== -#}
+              {%- set entities=device_entities(repeat.item) -%}
+              {%- set ns=namespace(results=[]) -%}
+              {#- build a list of true and false statements -#}
+              {%- if manufacturer == "Apple" -%}
+              {#- -------------- -#}
+              {#- Apple          -#}
+              {#- -------------- -#}
+              {#- check if the entity_id binary_sensor.<device>_focus is enabled -#}
+              {%- if(entities|select("search","_focus")|list|count==1) -%}
+              {#- binary_sensor.<device>_focus = off/on -#}
+              {%- set focus=states((entities|select("search","_focus")|list)[0]) -%}
+              {%- set ns.results=ns.results+[(focus=="on")] -%}
+              {%- endif -%}
+              {%- else -%}
+              {#- -------------- -#}
+              {#- Android        -#}
+              {#- -------------- -#}
+              {#- check if the entity_id sensor.<device>_ringer_mode is enabled -#}
+              {%- if (entities|select("search","_ringer_mode")|list|count==1) -%}
+              {%- set ringer_mode=states((entities|select("search","_ringer_mode")|list)[0]) -%}
+              {%- set ns.results=ns.results+[(ringer_mode!="normal")] -%}
+              {%- endif -%}
+              {#- check if the entity_id sensor.<device>_do_not_disturb_sensor is enabled -#}
+              {%- if (entities|select("search","_do_not_disturb_sensor")|list|count==1) -%}
+              {%- set do_not_disturb_sensor=states((entities|select("search","_do_not_disturb_sensor")|list)[0]) -%}
+              {%- set ns.results=ns.results+[(do_not_disturb_sensor!="off")] -%}
+              {%- endif -%}
+              {#- check if the entity_id sensor.<device>_audio_mode is enabled -#}
+              {%- if (entities|select("search","_audio_mode")|list|count==1) -%}
+              {%- set audio_mode=states((entities|select("search","_audio_mode")|list)[0]) -%}
+              {%- set ns.results=ns.results+[(audio_mode!="normal")] -%}
+              {%- endif -%}
+              {#- check if the entity_id binary_sensor.<device>_music_active is enabled -#}
+              {%- if (entities|select("search","_music_active")|list|count==1) -%}
+              {%- set music_active=states((entities|select("search","_music_active")|list)[0]) -%}
+              {%- set ns.results=ns.results+[(music_active=="on")] -%}
+              {%- endif -%}
+              {%- endif -%}
+              {#- from the list of true and false statements only check the true statements -#}
+              {#- if there are true statements then it results in true otherwise false -#}
+              {%- set do_not_disturb=ns.results|select("equalto",True)|list|count>0 -%}
+              {{do_not_disturb}}
             notify_car_ui: >-
-              {% set notify_car_ui=false%}
+              {%- set notify_car_ui=false -%}
               {%- if manufacturer != "Apple" -%}
               {%- if entities is defined and (entities|count>=1) and (entities|select('search','_android_auto')|list|count==1) -%}
-              {% set notify_car_ui=iif(states((entities|select("search","_android_auto")|list)[0])=="on",true,false)%}
+              {%- set notify_car_ui=iif(states((entities|select("search","_android_auto")|list)[0])=="on",true,false) -%}
               {%- endif -%}
               {%- endif -%}
               {{notify_car_ui}}
@@ -1309,45 +1320,56 @@ sequence:
               {#- Finally show the results as an DICT -#}
               {%- set servicedata=dict.from_keys(ns.servicedata) -%}
               {{- servicedata }}
-        - service: "{{service}}"
-          data: "{{servicedata}}"
-        - if:
-            - condition: template
-              value_template: >-
-                {{manufacturer != "Apple" and 
-                entities is defined and 
-                (entities|select('search','_android_auto')|list|count==1) and 
-                (states((entities|select("search","_android_auto")|list)[0])=="on") and 
-                notify_in_car_using_tts is defined and 
-                bool(notify_in_car_using_tts,false)==true and 
-                notify_message is defined and 
-                notify_message!='TTS'}}
-          then:
-            - variables:
-                notify_message_actions_text: !input notify_message_actions_text
-                servicedata: >-
-                  {#- If actions are defined then process each action title and add it to the notify_message -#}
-                  {%- if servicedata['data']['actions'] is defined -%}
-                  {%- set ns=namespace(actions=[]) -%}
-                  {%- for action in servicedata['data']['actions'] -%}
-                  {%- set ns.actions=ns.actions+[(action['title'])] -%}
-                  {%- endfor -%}
-                  {%- if notify_message_actions_text is not defined or notify_message_actions_text==None -%}
-                  {%- set notify_message_actions_text='Select one of the following actions on your phone' -%}
-                  {%- endif -%}
-                  {%- set notify_message_actions='. '~notify_message_actions_text~': '~ns.actions|join(', or ')-%}
-                  {%- set notify_message=notify_message~notify_message_actions -%}
-                  {%- endif -%}
+        - choose:
+            - conditions:
+                - condition: template
+                  value_template: >-
+                    {{not (manufacturer=="Apple" and notify_title is defined and (notify_message|upper)=="TTS" and data_ios_sound is not defined)}}
+              sequence:
+                - service: "{{service}}"
+                  data: "{{servicedata}}"
+        - choose:
+            - conditions:
+                - condition: template
+                  value_template: >-
+                    {{manufacturer != "Apple" and 
+                    entities is defined and 
+                    (entities|select('search','_android_auto')|list|count==1) and 
+                    (states((entities|select("search","_android_auto")|list)[0])=="on") and 
+                    notify_in_car_using_tts is defined and 
+                    bool(notify_in_car_using_tts,false)==true and 
+                    notify_message is defined and 
+                    notify_message!='TTS'}}
+              sequence:
+                - variables:
+                    notify_message_actions_text: !input notify_message_actions_text
+                    servicedata: >-
+                      {#- If actions are defined then process each action title and add it to the notify_message -#}
+                      {% if servicedata['data'] is not defined %}
+                      {%- set servicedata=dict((servicedata),**({'data':{}})) -%}
+                      {%endif%}
 
-                  {#- Create a data dict with the previous servicedata['data'] information and add to the data the tts_text -#}
-                  {#- The tts_text is what will be used for TTS -#}
-                  {%- set servicedata=dict((servicedata),**({'data':dict(servicedata['data'],**{'tts_text':notify_message})})) -%}
+                      {%- if servicedata['data'] is defined and servicedata['data']['actions'] is defined -%}
+                      {%- set ns=namespace(actions=[]) -%}
+                      {%- for action in servicedata['data']['actions'] -%}
+                      {%- set ns.actions=ns.actions+[(action['title'])] -%}
+                      {%- endfor -%}
+                      {%- if notify_message_actions_text is not defined or notify_message_actions_text==None -%}
+                      {%- set notify_message_actions_text='Select one of the following actions on your phone' -%}
+                      {%- endif -%}
+                      {%- set notify_message_actions='. '~notify_message_actions_text~': '~ns.actions|join(', or ')-%}
+                      {%- set notify_message=notify_message~notify_message_actions -%}
+                      {%- endif -%}
 
-                  {#- Create the whole servicedata dict with the previous data information and replace the message with the TTS value -#}
-                  {%- set servicedata=dict((servicedata),**({'message':'TTS'})) -%}
+                      {#- Create a data dict with the previous servicedata['data'] information and add to the data the tts_text -#}
+                      {#- The tts_text is what will be used for TTS -#}
+                      {%- set servicedata=dict((servicedata),**({'data':dict(servicedata['data'],**{'tts_text':notify_message})})) -%}
 
-                  {#- Finally remove the old title from the dict -#}
-                  {%- set servicedata=dict.from_keys(servicedata.items()|rejectattr('0','in','title')|list)%}
-                  {{servicedata}}
-            - service: "{{service}}"
-              data: "{{servicedata}}"
+                      {#- Create the whole servicedata dict with the previous data information and replace the message with the TTS value -#}
+                      {%- set servicedata=dict((servicedata),**({'message':'TTS'})) -%}
+
+                      {#- Finally remove the old title from the dict -#}
+                      {%- set servicedata=dict.from_keys(servicedata.items()|rejectattr('0','in','title')|list)%}
+                      {{servicedata}}
+                - service: "{{service}}"
+                  data: "{{servicedata}}"
