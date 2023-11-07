@@ -1152,10 +1152,12 @@ sequence:
               {%- if manufacturer!="Apple" and data_notification_color is defined -%}
               {#- The rgb color object selector spits it out as list with r,g and b [255,0,0]. This conflicts with the notification-color documentation, which requires HEX values. It has now been fixed. Thanks to https://github.com/velijv/home-assistant-color-helpers#rgb-to-hex -#}
               {#- Converting the list of [r,g,b] to hex -#}
+              {%- if data_notification_color|length==3 and data_notification_color[0]|is_number and data_notification_color[1]|is_number and data_notification_color[2]|is_number -%}
               {%- for color in data_notification_color -%}
               {%- set ns.hex_color=ns.hex_color+('%02x'%color) -%}
               {%- endfor -%}
               {%- set ns.data=ns.data+[("color",ns.hex_color)] -%}
+              {%- endif -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic#notification-sensitivity--lock-screen-visibility -#}
               {%- if manufacturer!="Apple" and data_visibility is defined -%}
