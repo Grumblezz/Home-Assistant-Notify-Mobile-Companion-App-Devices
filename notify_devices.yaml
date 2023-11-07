@@ -18,6 +18,9 @@ blueprint:
           custom_value: true
           multiple: false
   description: |-
+    **Version: 2023.11.07**
+    
+    ## Info ##
     **Struggling to make use of the notification options of the [Home Assistant Companion App](https://companion.home-assistant.io/) on your mobile device?**
     **Then this script can help you in the right direction.**
     ***
@@ -867,6 +870,19 @@ fields:
       object: null
 sequence:
   - variables:
+      debug: >-
+        {#- =============== -#}
+        {#-      DEBUG      -#}
+        {#- =============== -#}
+        {%- set debug=true -%}
+        {{debug}}
+      notify_home_or_away: >-
+        {%- if notify_home_or_away is not defined or notify_home_or_away not in ["Home","Away","Both"] -%}
+        {%- set notify_home_or_away="Both" -%}
+        {%- endif -%}
+        {{notify_home_or_away}}
+    enabled: false
+  - variables:
       all_devices: >-
         {%- if notify_devices is defined -%}
         {#- If the user uses the field "notify_devices" then use that/those device(s) -#}
@@ -912,6 +928,65 @@ sequence:
   - repeat:
       for_each: "{{notify_devices}}"
       sequence:
+        - variables:
+            repeat: >-
+              {#- =============== -#}
+              {#-      DEBUG      -#}
+              {#- =============== -#}
+              {%- if debug==true -%}
+              {%- set repeat={'item':notify_devices[0]} -%}
+              {%- endif -%}
+              {{repeat}}
+            notify_message: >-
+              {#- =============== -#}
+              {#-      DEBUG      -#}
+              {#- =============== -#}
+              {%- if debug==true -%}
+              {%- set notify_message='Shopping List' -%}
+              {{notify_message}}
+              {%- endif -%}
+            data_notification_icon: >-
+              {#- =============== -#}
+              {#-      DEBUG      -#}
+              {#- =============== -#}
+              {%- if debug==true -%}
+              {%- set data_notification_icon='mdi:cart' -%}
+              {{data_notification_icon}}
+              {%- endif -%}
+            data_notification_color: >-
+              {#- =============== -#}
+              {#-      DEBUG      -#}
+              {#- =============== -#}
+              {%- if debug==true -%}
+              {%- set data_notification_color=[255,187,0] -%}
+              {{data_notification_color}}
+              {%- endif -%}
+            notify_title: >-
+              {#- =============== -#}
+              {#-      DEBUG      -#}
+              {#- =============== -#}
+              {%- if debug==true -%}
+              {%- set notify_title='Fareway Shopping List' -%}
+              {{notify_title}}
+              {%- endif -%}
+            data_importance: >-
+              {#- =============== -#}
+              {#-      DEBUG      -#}
+              {#- =============== -#}
+              {%- if debug==true -%}
+              {%- set data_importance='high' -%}
+              {{data_importance}}
+              {%- endif -%}
+            data_clickaction_url: >-
+              {#- =============== -#}
+              {#-      DEBUG      -#}
+              {#- =============== -#}
+              {%- if debug==true -%}
+              {%- set data_clickaction_url='/todo/' -%}
+              {{data_clickaction_url}}
+              {%- endif -%}
+          enabled: false
+
         - variables:
             entity_id: >-
               {%- set entity_id=((device_entities(repeat.item)|select("search","device_tracker")|list)[0]) -%}
@@ -1152,7 +1227,7 @@ sequence:
               {%- set ns.data=ns.data+[("timeout",(data_timeout|int))] -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic#sticky-notification -#}
-              {%- if data_sticky is defined and data_sticky|lower in [true,false,"true","false",0,1,"0","1","yes","no","enable","disable"] -%}
+              {%- if data_sticky is defined and data_sticky|lower in [true,false,"true","false", 0, 1,"0","1","yes","no","enable","disable"] -%}
               {%- set ns.data=ns.data+[("sticky",bool(data_sticky,false))] -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notification-attachments -#}
