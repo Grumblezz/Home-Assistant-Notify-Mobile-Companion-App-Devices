@@ -1031,7 +1031,7 @@ sequence:
               {#- https://companion.home-assistant.io/docs/notifications/critical-notifications#android-text-to-speech-alarm-stream-max-volume -#}
               {%- if (data_device_ring|lower)=="max" and (notify_message|upper)=="TTS" -%}
               {%- set ns.data=ns.data+[("media_stream","alarm_stream_max")] -%}
-              {%- set data_importance="max" -%}
+              {%- set data_importance="high" -%}
               {%- endif -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic#notification-icon -#}
