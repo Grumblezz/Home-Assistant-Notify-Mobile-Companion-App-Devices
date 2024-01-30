@@ -213,6 +213,15 @@ fields:
     required: true
     example: There is somebody at the door!
     selector:
+  notify_tts:
+    name: Android Only - Notify using TTS
+    description: |-
+      Get your (Andriod) device to speak the notification.
+      Use the notification message (`notify_message`), required when used with TTS.
+      **NOTE** The Notification title (`notify_title`) will be ignored
+    required: false
+    selector:
+      boolean:
   notify_tts_in_car:
     name: Android Only - Notify using TTS whilst using Andriod Auto? (Optional)
     description: |-
@@ -1024,21 +1033,21 @@ sequence:
               {%- endif -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic/#text-to-speech-notifications -#}
-              {%- if notify_title is defined and (notify_message|upper)=="TTS" -%}
-              {%- set ns.data=ns.data+[("tts_text",notify_title)] -%}
+              {%- if notify_tts is defined and bool(notify_tts,false)==true and notify_message is defined -%}
+              {%- set ns.data=ns.data+[("tts_text",notify_message)] -%}
               {%- endif -%}
               {#- By default Text To Speech notifications use the music stream so they will bypass the ringer mode on the device as long as the device's volume is not set to 0. You have the option of using media_stream: alarm_stream to have your notification spoken regardless of music volume. -#}
               {%- if data_device_ring is defined and (data_device_ring|lower) in ["on","max"] -%}
               {%- set data_importance="high" -%}
               {#- https://companion.home-assistant.io/docs/notifications/critical-notifications#android-text-to-speech-alarm-stream -#}
-              {%- if (data_device_ring|lower)=="on" and (notify_message|upper)=="TTS" -%}
+              {%- if (data_device_ring|lower)=="on" and bool(notify_tts,false)==true -%}
               {%- set ns.data=ns.data+[("media_stream","alarm_stream")] -%}
               {%- endif -%}
-              {%- if (data_device_ring|lower)=="on" and (notify_message|upper)!="TTS" -%}
+              {%- if (data_device_ring|lower)=="on" and bool(notify_tts,false)!=true -%}
               {%- set ns.data=ns.data+[("channel","alarm_stream")] -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/critical-notifications#android-text-to-speech-alarm-stream-max-volume -#}
-              {%- if (data_device_ring|lower)=="max" and (notify_message|upper)=="TTS" -%}
+              {%- if (data_device_ring|lower)=="max" and bool(notify_tts,false)==true -%}
               {%- set ns.data=ns.data+[("media_stream","alarm_stream_max")] -%}
               {%- set data_importance="high" -%}
               {%- endif -%}
@@ -1313,15 +1322,12 @@ sequence:
               {%- set ns.data=ns.data+[("push",dict.from_keys(ns.push))] -%}
               {%- endif -%}
               {#- message and title are basic entries, but title is optional -#}
-              {%- if notify_title is defined and (notify_message|upper)!="TTS" -%}
+              {%- if notify_title is defined and (notify_tts is not defined or (notify_tts is defined and bool(notify_tts,false)==false)) -%}
               {%- set ns.servicedata=ns.servicedata+[("title",notify_title)] -%}
               {%- endif -%}
               {#- make sure that the message: <value> has an default value or is formatted correctly -#}
               {%- if notify_message is not defined -%}
               {%- set notify_message="Hello World" -%}
-              {%- endif -%}
-              {%- if (notify_message|upper)=="TTS" -%}
-              {%- set notify_message="TTS" -%}
               {%- endif -%}
               {%- if (notify_message|lower)=="clear_notification" -%}
               {%- set notify_message=(notify_message|lower) -%}
