@@ -213,6 +213,7 @@ fields:
     required: true
     example: There is somebody at the door!
     selector:
+      template:
   notify_tts:
     name: Android Only - Notify using TTS
     description: |-
@@ -1023,7 +1024,7 @@ sequence:
             servicedata: >-
               {# object which stores all options -#}
               {%- set ns=namespace(servicedata=[],data=[],push=[],sound=[],actions=[],hex_color="#") -%}
-
+              
               {%- if notify_message is not defined -%}
               {%- set notify_message='The `notify_message` field was not defined. What have you forgotten this time 🙂?' -%}
               {%- endif -%}
