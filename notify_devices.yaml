@@ -297,6 +297,14 @@ fields:
           - fan
         custom_value: true
         multiple: false
+  data_tag_clear_notification:
+    name: Remove Notifications
+    description: To remove the persistent notification(s) we send clear_notification to the tag (`data_tag`) that we defined. *WARNING* The Notification Message (`notify_message`) will be ignored/overwritten.
+    required: false
+    example: >-
+      True
+    selector:
+      boolean:
   data_importance:
     name: Important notification
     description: Notifications will appear immediately in most cases. However, in some cases (such as phone being stationary or when screen has been turned off for prolonged period of time) and this is to override that default behavior
@@ -1064,6 +1072,9 @@ sequence:
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic#replacing -#}
               {%- if data_tag is defined -%}
               {%- set ns.data=ns.data+[("tag",data_tag)] -%}
+              {%- if data_tag_clear_notification is defined and bool(data_tag_clear_notification,false)==true -%}
+              {%- set notify_message="clear_notification" -%}
+              {%- endif -%}
               {%- endif -%}
 
               {%- if manufacturer!="Apple" and data_persistent is defined -%}
