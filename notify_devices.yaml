@@ -258,6 +258,16 @@ fields:
           - Fan
         custom_value: true
         multiple: false
+  data_channel_remove:
+    name: Android Only - Removing a Notification channel (Optional)
+    description: |-
+      If you wish to remove a channel. Depending on when you installed the app you may want to enable this option with the Notification channel (`data_channel`) `default` to clean up the old default channel
+      *WARNING* The Notification Message (`notify_message`) will be ignored/overwritten.
+    required: false
+    example: >-
+      True
+    selector:
+      boolean:
   data_tag:
     name: Notification tag (Optional)
     description: Replace an existing notification by using a tag for the notification. All subsequent notifications will take the place of a notification with the same tag.
@@ -1006,6 +1016,9 @@ sequence:
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic/#notification-channels -#}
               {%- if data_channel is defined -%}
               {%- set ns.data=ns.data+[("channel",data_channel)] -%}
+              {%- if data_channel_remove is defined and bool(data_channel_remove,false)==true -%}
+              {%- set notify_message="remove_channel" -%}
+              {%- endif -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic/#text-to-speech-notifications -#}
               {%- if notify_title is defined and (notify_message|upper)=="TTS" -%}
