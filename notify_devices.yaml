@@ -1024,7 +1024,7 @@ sequence:
             servicedata: >-
               {# object which stores all options -#}
               {%- set ns=namespace(servicedata=[],data=[],push=[],sound=[],actions=[],hex_color="#") -%}
-              
+
               {%- if notify_message is not defined -%}
               {%- set notify_message='The `notify_message` field was not defined. What have you forgotten this time 🙂?' -%}
               {%- endif -%}
@@ -1042,8 +1042,9 @@ sequence:
               {%- endif -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic/#text-to-speech-notifications -#}
-              {%- if notify_tts is defined and bool(notify_tts,false)==true and notify_message is defined -%}
+              {%- if notify_tts is defined and bool(notify_tts,false)==true and notify_message is defined and notify_message is not in ['TTS','clear_notification','remove_channel'] -%}
               {%- set ns.data=ns.data+[("tts_text",notify_message)] -%}
+              {%- set notify_message="TTS"-%}
               {%- endif -%}
               {#- By default Text To Speech notifications use the music stream so they will bypass the ringer mode on the device as long as the device's volume is not set to 0. You have the option of using media_stream: alarm_stream to have your notification spoken regardless of music volume. -#}
               {%- if data_device_ring is defined and (data_device_ring|lower) in ["on","max"] -%}
@@ -1344,9 +1345,6 @@ sequence:
               {%- if notify_message is not defined -%}
               {%- set notify_message="Hello World" -%}
               {%- endif -%}
-              {%- if (notify_message|lower)=="clear_notification" -%}
-              {%- set notify_message=(notify_message|lower) -%}
-              {%- endif -%}
               {%- set ns.servicedata=ns.servicedata+[("message",notify_message)] -%}
               {%- set ns.servicedata=ns.servicedata+[("data",dict.from_keys(ns.data))] -%}
               {#- Finally show the results as an DICT -#}
@@ -1381,7 +1379,7 @@ sequence:
                 - variables:
                     notify_message_actions_text: !input notify_message_actions_text
                     servicedata: >-
-                      {%- if is_android_auto_active==true -%}
+                      {%- if is_android_auto_active==true and notify_message is defined and notify_message not in ['clear_notification','remove_channel']-%}
                       {#- If actions are defined then process each action title and add it to the notify_message -#}
                       {%- if servicedata['data'] is not defined -%}
                       {%- set servicedata=dict((servicedata),**({'data':{}})) -%}
@@ -1400,16 +1398,18 @@ sequence:
 
                       {#- Create a data dict with the previous servicedata['data'] information and add to the data the tts_text -#}
                       {#- The tts_text is what will be used for TTS -#}
+                      
+                      {%- if notify_message not in ['TTS','clear_notification','remove_channel'] -%}
                       {%- set servicedata=dict((servicedata),**({'data':dict(servicedata['data'],**{'tts_text':notify_message})})) -%}
-
                       {#- Create the whole servicedata dict with the previous data information and replace the message with the TTS value -#}
                       {%- set servicedata=dict((servicedata),**({'message':'TTS'})) -%}
+                      {%- endif -%}
 
                       {#- Finally remove the old title from the dict -#}
                       {%- set servicedata=dict.from_keys(servicedata.items()|rejectattr('0','in','title')|list)%}
                       {{servicedata}}
                       {%- else -%}
                       {%- set servicedata={'comment':'Android Auto is not active'} -%}
-                      {%- endif -%}
+                      {%- endif %}
                 - service: "{{service}}"
                   data: "{{servicedata}}"
