@@ -1073,8 +1073,11 @@ sequence:
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic#replacing -#}
               {%- if data_tag is defined -%}
               {%- set ns.data=ns.data+[("tag",data_tag)] -%}
+              {%- endif -%}
               {%- if data_tag_clear_notification is defined and bool(data_tag_clear_notification,false)==true -%}
               {%- set notify_message="clear_notification" -%}
+              {%- if data_tag is not defined -%}
+              {%- set ns.data=ns.data+[("tag","persistent")] -%}
               {%- endif -%}
               {%- endif -%}
 
