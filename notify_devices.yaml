@@ -213,18 +213,11 @@ fields:
     required: true
     example: There is somebody at the door!
     selector:
-      select:
-        options:
-          - TTS
-          - remove_channel
-          - clear_notification
-          - There is somebody at the door!
-          - There is somebody in the garden!
-        custom_value: true
-        multiple: false
-  notify_in_car_using_tts:
+  notify_tts_in_car:
     name: Android Only - Notify using TTS whilst using Andriod Auto? (Optional)
-    description: Upgrade the notification message to a TTS message, when the `binary_sensor.###_android_auto` is `on`. This can be useful whilst driving with Android Auto that the notification that you are sending is announched via TTS.
+    description: |-
+      Upgrade the notification message to a TTS message, when the `binary_sensor.###_android_auto` is `on`.
+      This can be useful whilst driving with Android Auto that the notification that you are sending is announched via TTS.
     required: false
     example: >-
       true
@@ -1332,23 +1325,28 @@ sequence:
             - conditions:
                 - condition: template
                   value_template: >-
-                    {{manufacturer != "Apple" and 
+                    {%- set is_android_auto_active=(
+                    manufacturer != "Apple" and 
                     entities is defined and 
                     (entities|select('search','_android_auto')|list|count==1) and 
                     (states((entities|select("search","_android_auto")|list)[0])=="on") and 
-                    notify_in_car_using_tts is defined and 
-                    bool(notify_in_car_using_tts,false)==true and 
-                    notify_message is defined and 
-                    notify_message!='TTS'}}
+                    notify_tts_in_car is defined and 
+                    bool(notify_tts_in_car,false)==true and 
+                    (
+                    (notify_message is defined and notify_message!='TTS') 
+                    or 
+                    (notify_title is defined and notify_tts is defined and bool(notify_tts,false)==true)
+                    )) -%}
+                    {{is_android_auto_active}}
               sequence:
                 - variables:
                     notify_message_actions_text: !input notify_message_actions_text
                     servicedata: >-
+                      {%- if is_android_auto_active==true -%}
                       {#- If actions are defined then process each action title and add it to the notify_message -#}
-                      {% if servicedata['data'] is not defined %}
+                      {%- if servicedata['data'] is not defined -%}
                       {%- set servicedata=dict((servicedata),**({'data':{}})) -%}
-                      {%endif%}
-
+                      {%- endif -%}
                       {%- if servicedata['data'] is defined and servicedata['data']['actions'] is defined -%}
                       {%- set ns=namespace(actions=[]) -%}
                       {%- for action in servicedata['data']['actions'] -%}
@@ -1371,5 +1369,8 @@ sequence:
                       {#- Finally remove the old title from the dict -#}
                       {%- set servicedata=dict.from_keys(servicedata.items()|rejectattr('0','in','title')|list)%}
                       {{servicedata}}
+                      {%- else -%}
+                      {%- set servicedata={'comment':'Android Auto is not active'} -%}
+                      {%- endif -%}
                 - service: "{{service}}"
                   data: "{{servicedata}}"
