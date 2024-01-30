@@ -183,21 +183,21 @@ fields:
     required: false
     example: mdi:motion-outline
     selector:
-      icon: null
+      icon:
   data_notification_color:
     name: Android Only - Color of the notification icon (Optional)
     description: In Android you can set the color of the notification icon
     required: false
     example: "[255,0,0]"
     selector:
-      color_rgb: null
+      color_rgb:
   notify_title:
     name: Notification title (Optional)
     description: Notification title, required when used with TTS
     required: false
     example: Frontdoor
     selector:
-      template: null
+      template:
   data_subtitle:
     name: Notification Subtitle / subject (Optional)
     description: Subtitles and subjects are secondary headings
@@ -229,7 +229,7 @@ fields:
     example: >-
       true
     selector:
-      boolean: null
+      boolean:
   data_group:
     name: Notification grouping (Optional)
     description: Combine notification together visually.
@@ -322,7 +322,7 @@ fields:
     example: >-
       true
     selector:
-      boolean: null
+      boolean:
   data_persistent:
     name: Android Only - Persistent notification? (Optional)
     description: Persistent notifications are notifications that cannot be dismissed by swiping away. It requires the Notification tag to be set. If not set it will set it to persistent.
