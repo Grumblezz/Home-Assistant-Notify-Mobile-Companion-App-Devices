@@ -238,7 +238,10 @@ fields:
         multiple: false
   data_channel:
     name: Android Only - Notification channel (Optional)
-    description: Notification channels allows users to separate their notifications easily (i.e. alarm vs laundry) so they can customize aspects like what type of sound is made and a lot of other device specific features.Devices running Android 8.0+ are able to create and manage notification channels on the fly using automations. Once a channel is created you can navigate to your notification settings and you will find the newly created channel, from there you can customize the behavior based on what your device allows.
+    description: |-
+      Notification channels allows users to separate their notifications easily (i.e. alarm vs laundry) so they can customize aspects like what type of sound is made and a lot of other device specific features.
+      Devices running Android 8.0+ are able to create and manage notification channels on the fly using automations.
+      Once a channel is created you can navigate to your notification settings and you will find the newly created channel, from there you can customize the behavior based on what your device allows.
     required: false
     example: Motion
     selector:
@@ -1053,9 +1056,11 @@ sequence:
               {%- if data_tag is defined -%}
               {%- set ns.data=ns.data+[("tag",data_tag)] -%}
               {%- endif -%}
+
               {%- if manufacturer!="Apple" and data_persistent is defined -%}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic#persistent-notification -#}
               {#- making sure that an boolean is specified, otherwise skipping -#}
+
               {%- if data_persistent is boolean -%}
               {%- set data_persistent=bool(data_persistent,false) -%}
               {%- set ns.data=ns.data+[("persistent",data_persistent)] -%}
@@ -1158,7 +1163,7 @@ sequence:
               {%- set ns.data=ns.data+[("timeout",(data_timeout|int))] -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic#sticky-notification -#}
-              {%- if data_sticky is defined and data_sticky|lower in [true,false,"true","false",0,1,"0","1","yes","no","enable","disable"] -%}
+              {%- if data_sticky is defined and bool(data_sticky,false)==true -%}
               {%- set ns.data=ns.data+[("sticky",bool(data_sticky,false))] -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notification-attachments -#}
