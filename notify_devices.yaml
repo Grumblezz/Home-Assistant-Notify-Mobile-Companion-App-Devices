@@ -1061,7 +1061,7 @@ sequence:
               {%- endif -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic/#text-to-speech-notifications -#}
-              {%- if notify_tts is defined and bool(notify_tts,false)==true and notify_message is defined and notify_message is not in ['TTS','clear_notification','remove_channel'] -%}
+              {%- if manufacturer!="Apple" and notify_tts is defined and bool(notify_tts,false)==true and notify_message is defined and notify_message is not in ['TTS','clear_notification','remove_channel'] -%}
               {%- set ns.data=ns.data+[("tts_text",notify_message)] -%}
               {%- set notify_message="TTS"-%}
               {%- endif -%}
@@ -1372,30 +1372,40 @@ sequence:
               {#- Finally show the results as an DICT -#}
               {%- set servicedata=dict.from_keys(ns.servicedata) -%}
               {{- servicedata }}
+        - variables:
+            notify_condition: >-
+              {%- set notify_condition=not (manufacturer=="Apple" and (notify_tts is defined and bool(notify_tts,false)==true) and data_ios_sound is not defined) -%}
+              {{notify_condition}}
         - choose:
             - conditions:
                 - condition: template
                   value_template: >-
-                    {{not (manufacturer=="Apple" and notify_title is defined and (notify_message|upper)=="TTS" and data_ios_sound is not defined)}}
+                    {{notify_condition}}
               sequence:
                 - service: "{{service}}"
-                  data: "{{servicedata}}"
+                  data: >-
+                    {%- if notify_condition==true -%}
+                    {{servicedata}}
+                    {%- endif %}
+        - variables:
+            is_android_auto_active: >-
+              {%- set is_android_auto_active=(
+              manufacturer != "Apple" and 
+              entities is defined and 
+              (entities|select('search','_android_auto')|list|count==1) and 
+              (states((entities|select("search","_android_auto")|list)[0])=="on") and 
+              notify_tts_in_car is defined and 
+              bool(notify_tts_in_car,false)==true and 
+              (
+              (notify_message is defined and notify_message!='TTS') 
+              or 
+              (notify_title is defined and notify_tts is defined and bool(notify_tts,false)==true)
+              )) -%}
+              {{is_android_auto_active}}
         - choose:
             - conditions:
                 - condition: template
                   value_template: >-
-                    {%- set is_android_auto_active=(
-                    manufacturer != "Apple" and 
-                    entities is defined and 
-                    (entities|select('search','_android_auto')|list|count==1) and 
-                    (states((entities|select("search","_android_auto")|list)[0])=="on") and 
-                    notify_tts_in_car is defined and 
-                    bool(notify_tts_in_car,false)==true and 
-                    (
-                    (notify_message is defined and notify_message!='TTS') 
-                    or 
-                    (notify_title is defined and notify_tts is defined and bool(notify_tts,false)==true)
-                    )) -%}
                     {{is_android_auto_active}}
               sequence:
                 - variables:
@@ -1431,7 +1441,11 @@ sequence:
                       {%- set servicedata=dict.from_keys(servicedata.items()|rejectattr('0','in','title')|list)%}
                       {{servicedata}}
                       {%- else -%}
+                      {%- if manufacturer == "Apple"  -%}
+                      {%- set servicedata={'comment':'TTS is not supported on Apple Car Play'} -%}
+                      {%- else -%}
                       {%- set servicedata={'comment':'Android Auto is not active'} -%}
+                      {%- endif -%}
                       {%- endif %}
                 - service: "{{service}}"
                   data: "{{servicedata}}"
