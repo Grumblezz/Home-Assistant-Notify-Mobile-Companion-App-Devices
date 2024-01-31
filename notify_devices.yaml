@@ -8,11 +8,16 @@ blueprint:
   input:
     notify_message_actions_text:
       name: Android Only - Enter a custom Text to Speech text used to anounch the actions, when your device is connected to the Android Auto.
-      description: When you mobile device is connect to Android Auto then you can enable the 'Android Only - Notify using TTS whilst using Andriod Auto?'. And when you have actions defined then you can announce them by this introduction sentence. [The TTS current support is limited to the current Text To Speech locale set on the device](https://companion.home-assistant.io/docs/notifications/notifications-basic#text-to-speech-notifications).
+      description: |-
+        When you mobile device is connect to Android Auto then you can enable the 'Android Only - Notify using TTS whilst using Andriod Auto?'. 
+        And when you have actions defined then you can announce them by this introduction sentence. 
+        [The TTS current support is limited to the current Text To Speech locale set on the device](https://companion.home-assistant.io/docs/notifications/notifications-basic#text-to-speech-notifications).
+        Enter a custom value that matches your need.
       default: Select one of the following actions on your phone
       selector:
         select:
           options:
+            - Enter an custom value
             - Select 1 of the following actions on your phone
             - Selecteer 1 van de volgende acties op je telefoon
           custom_value: true
@@ -167,6 +172,12 @@ fields:
         multiple: true
   notify_home_or_away:
     name: Notify those that are Home or Away?
+    description: |-
+      With this option you can filter the devices based on their location. 
+      • Select `Home` when you only want to notify those (`notify_devices`) devices that are in the zone Home.
+      • Select `Away` when you only want to notify those (`notify_devices`) devices that are NOT in the zone Home.
+      • Select `Both` when it does not matter where those (`notify_devices`) devices are, they will be notified. 
+      If not specified, then `Both` will be used.
     required: false
     example: Both
     selector:
@@ -179,7 +190,7 @@ fields:
           - Both
   data_notification_icon:
     name: Android Only - Notification icon (Optional)
-    description: Changing the default notification status bar icon
+    description: Change the default notification status bar icon to an mdi icon
     required: false
     example: mdi:motion-outline
     selector:
@@ -235,12 +246,13 @@ fields:
       boolean:
   data_group:
     name: Notification grouping (Optional)
-    description: Combine notification together visually.
+    description: Combine notification together visually. Custom values are allowed.
     required: false
     example: Motion
     selector:
       select:
         options:
+          - Enter an custom value
           - Alarm
           - Example
           - Motion
@@ -252,11 +264,13 @@ fields:
       Notification channels allows users to separate their notifications easily (i.e. alarm vs laundry) so they can customize aspects like what type of sound is made and a lot of other device specific features.
       Devices running Android 8.0+ are able to create and manage notification channels on the fly using automations.
       Once a channel is created you can navigate to your notification settings and you will find the newly created channel, from there you can customize the behavior based on what your device allows.
+      Custom values are allowed.
     required: false
     example: Motion
     selector:
       select:
         options:
+          - Enter an custom value
           - Motion Detected
           - default
           - Importance
@@ -283,12 +297,13 @@ fields:
       boolean:
   data_tag:
     name: Notification tag (Optional)
-    description: Replace an existing notification by using a tag for the notification. All subsequent notifications will take the place of a notification with the same tag.
+    description: Replace an existing notification by using a tag for the notification. All subsequent notifications will take the place of a notification with the same tag. Custom values are allowed.
     required: false
     example: backyard-motion-detected
     selector:
       select:
         options:
+          - Enter an custom value
           - backyard-motion-detected
           - alarm
           - doorbell
@@ -356,7 +371,7 @@ fields:
     example: >-
       true
     selector:
-      boolean: null
+      boolean:
   data_timeout:
     name: Android Only - Timeout message in seconds (Optional)
     description: How many seconds a notification will be shown on a users device before being removed/dismissed automatically.
@@ -375,7 +390,7 @@ fields:
     description: Shows a timestamp. Notification will not disappear when the timer reaches 0. Instead, it will continue decrementing into negative values.
     required: false
     selector:
-      datetime: null
+      datetime:
   data_chronometer_enable:
     name: Android Only - (when combined with data_chronometer) Enable the Notifications timer with a count up/down timer (Optional)
     description: Show a count up/down timer. Notification will not disappear when the timer reaches 0. Instead, it will continue decrementing into negative values.
@@ -383,7 +398,7 @@ fields:
     example: >-
       true
     selector:
-      boolean: null
+      boolean:
   data_critical:
     name: iOS Only - Critical notification? (Optional)
     description: Critical alerts always appear at the top of your lock screen above all other notifications, and play a sound even if Do Not Disturb is enabled or the iPhone is muted.
@@ -391,7 +406,7 @@ fields:
     example: >-
       true
     selector:
-      boolean: null
+      boolean:
   data_ios_sound:
     name: iOS Only - Sounds? (Optional)
     description:
@@ -399,12 +414,14 @@ fields:
       For more information click [here](https://companion.home-assistant.io/docs/notifications/notification-sounds#custom-push-notification-sounds).
       Adding a custom sound to a notification allows you to easily identify the notification without even looking at your device.
       You must use the full filename (including extension) in the payload.
-      If "iOS Only - Sound Volume Level" is not defined, then it will set the default sound level to 50%
+      If "iOS Only - Sound Volume Level" is not defined, then it will set the default sound level to 50%.
+      Custom values are allowed, as long as they match the sound file.
     required: false
     example: US-EN-Morgan-Freeman-Roommate-Is-Arriving.wav
     selector:
       select:
         options:
+          - Enter an custom value, see https://companion.home-assistant.io/docs/notifications/notification-sounds#custom-push-notification-sounds
           - default
           - 3rdParty_DirectionDown_Haptic.caf
           - 3rdParty_DirectionUp_Haptic.caf
@@ -871,8 +888,8 @@ fields:
     selector:
       select:
         options:
-          - /lovelace/
           - Enter an custom value
+          - /lovelace/
           - "app://com.twitter.android"
           - "settings://notification_history"
           - "intent://scan/#Intent;scheme=zxing;package=com.google.zxing.client.android;end"
