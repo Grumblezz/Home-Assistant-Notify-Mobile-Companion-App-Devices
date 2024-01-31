@@ -167,7 +167,7 @@ fields:
         multiple: true
   notify_home_or_away:
     name: Notify those that are Home or Away?
-    required: true
+    required: false
     example: Both
     selector:
       select:
