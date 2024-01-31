@@ -62,8 +62,8 @@ blueprint:
     data:
       notify_home_or_away: Both
       data_tag: Use this tag when you need to remove it
+      data_tag_clear_notification: true
       data_importance: high
-      notify_message: clear_notification
     ```
     ### Example 3 ###
     Send a notification with camera image file. The data_camera can accept various
@@ -193,9 +193,9 @@ fields:
       color_rgb:
   notify_title:
     name: Notification title (Optional)
-    description: Notification title, required when used with TTS
+    description: Notification title
     required: false
-    example: Frontdoor
+    example: Motion • Frontdoor
     selector:
       template:
   data_subtitle:
@@ -300,7 +300,9 @@ fields:
         multiple: false
   data_tag_clear_notification:
     name: Remove Notifications
-    description: To remove the persistent notification(s) we send clear_notification to the tag (`data_tag`) that we defined. *WARNING* The Notification Message (`notify_message`) will be ignored/overwritten.
+    description: |-
+      Removes the notification(s) with a certain tag (see `data_tag`). 
+      To remove/clear the persistent notification(s): Use `data_tag: persistant`. *WARNING* The Notification Message (`notify_message`) will be ignored/overwritten.
     required: false
     example: >-
       True
