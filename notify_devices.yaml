@@ -1,5 +1,5 @@
 blueprint:
-  name: Notify Mobile App Devices
+  name: Notify Mobile App Devices (2024.2)
   domain: script
   homeassistant:
     min_version: 2023.6.0
@@ -8,17 +8,22 @@ blueprint:
   input:
     notify_message_actions_text:
       name: Android Only - Enter a custom Text to Speech text used to anounch the actions, when your device is connected to the Android Auto.
-      description: When you mobile device is connect to Android Auto then you can enable the 'Android Only - Notify using TTS whilst using Andriod Auto?'. And when you have actions defined then you can announce them by this introduction sentence. [The TTS current support is limited to the current Text To Speech locale set on the device](https://companion.home-assistant.io/docs/notifications/notifications-basic#text-to-speech-notifications).
+      description: |-
+        When you mobile device is connect to Android Auto then you can enable the 'Android Only - Notify using TTS whilst using Andriod Auto?'. 
+        And when you have actions defined then you can announce them by this introduction sentence. 
+        [The TTS current support is limited to the current Text To Speech locale set on the device](https://companion.home-assistant.io/docs/notifications/notifications-basic#text-to-speech-notifications).
+        Enter a custom value that matches your need.
       default: Select one of the following actions on your phone
       selector:
         select:
           options:
+            - Enter an custom value
             - Select 1 of the following actions on your phone
             - Selecteer 1 van de volgende acties op je telefoon
           custom_value: true
           multiple: false
   description: |-
-    **Version: 2023.11.07**
+    **Version: 2024.2**
     
     ## Info ##
     **Struggling to make use of the notification options of the [Home Assistant Companion App](https://companion.home-assistant.io/) on your mobile device?**
@@ -65,8 +70,8 @@ blueprint:
     data:
       notify_home_or_away: Both
       data_tag: Use this tag when you need to remove it
+      data_tag_clear_notification: true
       data_importance: high
-      notify_message: clear_notification
     ```
     ### Example 3 ###
     Send a notification with camera image file. The data_camera can accept various
@@ -170,7 +175,13 @@ fields:
         multiple: true
   notify_home_or_away:
     name: Notify those that are Home or Away?
-    required: true
+    description: |-
+      With this option you can filter the devices based on their location. 
+      • Select `Home` when you only want to notify those (`notify_devices`) devices that are in the zone Home.
+      • Select `Away` when you only want to notify those (`notify_devices`) devices that are NOT in the zone Home.
+      • Select `Both` when it does not matter where those (`notify_devices`) devices are, they will be notified. 
+      If not specified, then `Both` will be used.
+    required: false
     example: Both
     selector:
       select:
@@ -182,25 +193,25 @@ fields:
           - Both
   data_notification_icon:
     name: Android Only - Notification icon (Optional)
-    description: Changing the default notification status bar icon
+    description: Change the default notification status bar icon to an mdi icon
     required: false
     example: mdi:motion-outline
     selector:
-      icon: null
+      icon:
   data_notification_color:
     name: Android Only - Color of the notification icon (Optional)
     description: In Android you can set the color of the notification icon
     required: false
     example: "[255,0,0]"
     selector:
-      color_rgb: null
+      color_rgb:
   notify_title:
     name: Notification title (Optional)
-    description: Notification title, required when used with TTS
+    description: Notification title
     required: false
-    example: Frontdoor
+    example: Motion • Frontdoor
     selector:
-      template: null
+      template:
   data_subtitle:
     name: Notification Subtitle / subject (Optional)
     description: Subtitles and subjects are secondary headings
@@ -216,31 +227,35 @@ fields:
     required: true
     example: There is somebody at the door!
     selector:
-      select:
-        options:
-          - TTS
-          - remove_channel
-          - clear_notification
-          - There is somebody at the door!
-          - There is somebody in the garden!
-        custom_value: true
-        multiple: false
-  notify_in_car_using_tts:
+      template:
+  notify_tts:
+    name: Android Only - Notify using TTS
+    description: |-
+      Get your (Andriod) device to speak the notification.
+      Use the notification message (`notify_message`), required when used with TTS.
+      **NOTE** The Notification title (`notify_title`) will be ignored
+    required: false
+    selector:
+      boolean:
+  notify_tts_in_car:
     name: Android Only - Notify using TTS whilst using Andriod Auto? (Optional)
-    description: Upgrade the notification message to a TTS message, when the `binary_sensor.###_android_auto` is `on`. This can be useful whilst driving with Android Auto that the notification that you are sending is announched via TTS.
+    description: |-
+      Upgrade the notification message to a TTS message, when the `binary_sensor.###_android_auto` is `on`.
+      This can be useful whilst driving with Android Auto that the notification that you are sending is announched via TTS.
     required: false
     example: >-
       true
     selector:
-      boolean: null
+      boolean:
   data_group:
     name: Notification grouping (Optional)
-    description: Combine notification together visually.
+    description: Combine notification together visually. Custom values are allowed.
     required: false
     example: Motion
     selector:
       select:
         options:
+          - Enter an custom value
           - Alarm
           - Example
           - Motion
@@ -248,12 +263,17 @@ fields:
         multiple: false
   data_channel:
     name: Android Only - Notification channel (Optional)
-    description: Notification channels allows users to separate their notifications easily (i.e. alarm vs laundry) so they can customize aspects like what type of sound is made and a lot of other device specific features.Devices running Android 8.0+ are able to create and manage notification channels on the fly using automations. Once a channel is created you can navigate to your notification settings and you will find the newly created channel, from there you can customize the behavior based on what your device allows.
+    description: |-
+      Notification channels allows users to separate their notifications easily (i.e. alarm vs laundry) so they can customize aspects like what type of sound is made and a lot of other device specific features.
+      Devices running Android 8.0+ are able to create and manage notification channels on the fly using automations.
+      Once a channel is created you can navigate to your notification settings and you will find the newly created channel, from there you can customize the behavior based on what your device allows.
+      Custom values are allowed.
     required: false
     example: Motion
     selector:
       select:
         options:
+          - Enter an custom value
           - Motion Detected
           - default
           - Importance
@@ -268,14 +288,25 @@ fields:
           - Fan
         custom_value: true
         multiple: false
+  data_channel_remove:
+    name: Android Only - Removing a Notification channel (Optional)
+    description: |-
+      If you wish to remove a channel. Depending on when you installed the app you may want to enable this option with the Notification channel (`data_channel`) `default` to clean up the old default channel
+      *WARNING* The Notification Message (`notify_message`) will be ignored/overwritten.
+    required: false
+    example: >-
+      True
+    selector:
+      boolean:
   data_tag:
     name: Notification tag (Optional)
-    description: Replace an existing notification by using a tag for the notification. All subsequent notifications will take the place of a notification with the same tag.
+    description: Replace an existing notification by using a tag for the notification. All subsequent notifications will take the place of a notification with the same tag. Custom values are allowed.
     required: false
     example: backyard-motion-detected
     selector:
       select:
         options:
+          - Enter an custom value
           - backyard-motion-detected
           - alarm
           - doorbell
@@ -285,6 +316,16 @@ fields:
           - fan
         custom_value: true
         multiple: false
+  data_tag_clear_notification:
+    name: Remove Notifications
+    description: |-
+      Removes the notification(s) with a certain tag (see `data_tag`). 
+      To remove/clear the persistent notification(s): Use `data_tag: persistant`. *WARNING* The Notification Message (`notify_message`) will be ignored/overwritten.
+    required: false
+    example: >-
+      True
+    selector:
+      boolean:
   data_importance:
     name: Important notification
     description: Notifications will appear immediately in most cases. However, in some cases (such as phone being stationary or when screen has been turned off for prolonged period of time) and this is to override that default behavior
@@ -325,7 +366,7 @@ fields:
     example: >-
       true
     selector:
-      boolean: null
+      boolean:
   data_persistent:
     name: Android Only - Persistent notification? (Optional)
     description: Persistent notifications are notifications that cannot be dismissed by swiping away. It requires the Notification tag to be set. If not set it will set it to persistent.
@@ -333,7 +374,7 @@ fields:
     example: >-
       true
     selector:
-      boolean: null
+      boolean:
   data_timeout:
     name: Android Only - Timeout message in seconds (Optional)
     description: How many seconds a notification will be shown on a users device before being removed/dismissed automatically.
@@ -352,7 +393,7 @@ fields:
     description: Shows a timestamp. Notification will not disappear when the timer reaches 0. Instead, it will continue decrementing into negative values.
     required: false
     selector:
-      datetime: null
+      datetime:
   data_chronometer_enable:
     name: Android Only - (when combined with data_chronometer) Enable the Notifications timer with a count up/down timer (Optional)
     description: Show a count up/down timer. Notification will not disappear when the timer reaches 0. Instead, it will continue decrementing into negative values.
@@ -360,7 +401,7 @@ fields:
     example: >-
       true
     selector:
-      boolean: null
+      boolean:
   data_critical:
     name: iOS Only - Critical notification? (Optional)
     description: Critical alerts always appear at the top of your lock screen above all other notifications, and play a sound even if Do Not Disturb is enabled or the iPhone is muted.
@@ -368,7 +409,7 @@ fields:
     example: >-
       true
     selector:
-      boolean: null
+      boolean:
   data_ios_sound:
     name: iOS Only - Sounds? (Optional)
     description:
@@ -376,12 +417,14 @@ fields:
       For more information click [here](https://companion.home-assistant.io/docs/notifications/notification-sounds#custom-push-notification-sounds).
       Adding a custom sound to a notification allows you to easily identify the notification without even looking at your device.
       You must use the full filename (including extension) in the payload.
-      If "iOS Only - Sound Volume Level" is not defined, then it will set the default sound level to 50%
+      If "iOS Only - Sound Volume Level" is not defined, then it will set the default sound level to 50%.
+      Custom values are allowed, as long as they match the sound file.
     required: false
     example: US-EN-Morgan-Freeman-Roommate-Is-Arriving.wav
     selector:
       select:
         options:
+          - Enter an custom value, see https://companion.home-assistant.io/docs/notifications/notification-sounds#custom-push-notification-sounds
           - default
           - 3rdParty_DirectionDown_Haptic.caf
           - 3rdParty_DirectionUp_Haptic.caf
@@ -839,7 +882,7 @@ fields:
     description: The Entity to navigate to when clicking on the notification
     required: false
     selector:
-      entity: null
+      entity: 
   data_clickaction_url:
     name: URL to navigate to (Optional)
     description: The URL to navigate to when clicking on the notification (custom values allowed)
@@ -848,8 +891,8 @@ fields:
     selector:
       select:
         options:
-          - /lovelace/
           - Enter an custom value
+          - /lovelace/
           - "app://com.twitter.android"
           - "settings://notification_history"
           - "intent://scan/#Intent;scheme=zxing;package=com.google.zxing.client.android;end"
@@ -867,7 +910,7 @@ fields:
     description: See [building-actionable-notifications](https://companion.home-assistant.io/docs/notifications/actionable-notifications#building-actionable-notifications)
     required: false
     selector:
-      object: null
+      object: 
 sequence:
   - variables:
       debug: >-
@@ -933,7 +976,7 @@ sequence:
               {#- =============== -#}
               {#-      DEBUG      -#}
               {#- =============== -#}
-              {%- if debug==true -%}
+              {%- if debug==false -%}
               {%- set repeat={'item':notify_devices[0]} -%}
               {%- endif -%}
               {{repeat}}
@@ -1088,25 +1131,29 @@ sequence:
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic/#notification-channels -#}
               {%- if data_channel is defined -%}
               {%- set ns.data=ns.data+[("channel",data_channel)] -%}
+              {%- if data_channel_remove is defined and bool(data_channel_remove,false)==true -%}
+              {%- set notify_message="remove_channel" -%}
+              {%- endif -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic/#text-to-speech-notifications -#}
-              {%- if notify_title is defined and (notify_message|upper)=="TTS" -%}
-              {%- set ns.data=ns.data+[("tts_text",notify_title)] -%}
+              {%- if manufacturer!="Apple" and notify_tts is defined and bool(notify_tts,false)==true and notify_message is defined and notify_message is not in ['TTS','clear_notification','remove_channel'] -%}
+              {%- set ns.data=ns.data+[("tts_text",notify_message)] -%}
+              {%- set notify_message="TTS"-%}
               {%- endif -%}
               {#- By default Text To Speech notifications use the music stream so they will bypass the ringer mode on the device as long as the device's volume is not set to 0. You have the option of using media_stream: alarm_stream to have your notification spoken regardless of music volume. -#}
               {%- if data_device_ring is defined and (data_device_ring|lower) in ["on","max"] -%}
               {%- set data_importance="high" -%}
               {#- https://companion.home-assistant.io/docs/notifications/critical-notifications#android-text-to-speech-alarm-stream -#}
-              {%- if (data_device_ring|lower)=="on" and (notify_message|upper)=="TTS" -%}
+              {%- if (data_device_ring|lower)=="on" and bool(notify_tts,false)==true -%}
               {%- set ns.data=ns.data+[("media_stream","alarm_stream")] -%}
               {%- endif -%}
-              {%- if (data_device_ring|lower)=="on" and (notify_message|upper)!="TTS" -%}
+              {%- if (data_device_ring|lower)=="on" and bool(notify_tts,false)!=true -%}
               {%- set ns.data=ns.data+[("channel","alarm_stream")] -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/critical-notifications#android-text-to-speech-alarm-stream-max-volume -#}
-              {%- if (data_device_ring|lower)=="max" and (notify_message|upper)=="TTS" -%}
+              {%- if (data_device_ring|lower)=="max" and bool(notify_tts,false)==true -%}
               {%- set ns.data=ns.data+[("media_stream","alarm_stream_max")] -%}
-              {%- set data_importance="max" -%}
+              {%- set data_importance="high" -%}
               {%- endif -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic#notification-icon -#}
@@ -1122,9 +1169,17 @@ sequence:
               {%- if data_tag is defined -%}
               {%- set ns.data=ns.data+[("tag",data_tag)] -%}
               {%- endif -%}
+              {%- if data_tag_clear_notification is defined and bool(data_tag_clear_notification,false)==true -%}
+              {%- set notify_message="clear_notification" -%}
+              {%- if data_tag is not defined -%}
+              {%- set ns.data=ns.data+[("tag","persistent")] -%}
+              {%- endif -%}
+              {%- endif -%}
+
               {%- if manufacturer!="Apple" and data_persistent is defined -%}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic#persistent-notification -#}
               {#- making sure that an boolean is specified, otherwise skipping -#}
+
               {%- if data_persistent is boolean -%}
               {%- set data_persistent=bool(data_persistent,false) -%}
               {%- set ns.data=ns.data+[("persistent",data_persistent)] -%}
@@ -1229,7 +1284,7 @@ sequence:
               {%- set ns.data=ns.data+[("timeout",(data_timeout|int))] -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic#sticky-notification -#}
-              {%- if data_sticky is defined and data_sticky|lower in [true,false,"true","false", 0, 1,"0","1","yes","no","enable","disable"] -%}
+              {%- if data_sticky is defined and bool(data_sticky,false)==true -%}
               {%- set ns.data=ns.data+[("sticky",bool(data_sticky,false))] -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notification-attachments -#}
@@ -1379,15 +1434,12 @@ sequence:
               {%- set ns.data=ns.data+[("push",dict.from_keys(ns.push))] -%}
               {%- endif -%}
               {#- message and title are basic entries, but title is optional -#}
-              {%- if notify_title is defined and (notify_message|upper)!="TTS" -%}
+              {%- if notify_title is defined and (notify_tts is not defined or (notify_tts is defined and bool(notify_tts,false)==false)) -%}
               {%- set ns.servicedata=ns.servicedata+[("title",notify_title)] -%}
               {%- endif -%}
               {#- make sure that the message: <value> has an default value or is formatted correctly -#}
               {%- if notify_message is not defined -%}
               {%- set notify_message="Hello World" -%}
-              {%- endif -%}
-              {%- if (notify_message|upper)=="TTS" -%}
-              {%- set notify_message="TTS" -%}
               {%- endif -%}
               {%- if (notify_message|lower)=="clear_notification" -%}
               {%- set notify_message=(notify_message|lower) -%}
@@ -1397,35 +1449,50 @@ sequence:
               {#- Finally show the results as an DICT -#}
               {%- set servicedata=dict.from_keys(ns.servicedata) -%}
               {{- servicedata }}
+        - variables:
+            notify_condition: >-
+              {%- set notify_condition=not (manufacturer=="Apple" and (notify_tts is defined and bool(notify_tts,false)==true) and data_ios_sound is not defined) -%}
+              {{notify_condition}}
         - choose:
             - conditions:
                 - condition: template
                   value_template: >-
-                    {{not (manufacturer=="Apple" and notify_title is defined and (notify_message|upper)=="TTS" and data_ios_sound is not defined)}}
+                    {{notify_condition}}
               sequence:
                 - service: "{{service}}"
-                  data: "{{servicedata}}"
+                  data: >-
+                    {%- if notify_condition==true -%}
+                    {{servicedata}}
+                    {%- endif %}
+        - variables:
+            is_android_auto_active: >-
+              {%- set is_android_auto_active=(
+              manufacturer != "Apple" and 
+              entities is defined and 
+              (entities|select('search','_android_auto')|list|count==1) and 
+              (states((entities|select("search","_android_auto")|list)[0])=="on") and 
+              notify_tts_in_car is defined and 
+              bool(notify_tts_in_car,false)==true and 
+              (
+              (notify_message is defined and notify_message!='TTS') 
+              or 
+              (notify_title is defined and notify_tts is defined and bool(notify_tts,false)==true)
+              )) -%}
+              {{is_android_auto_active}}
         - choose:
             - conditions:
                 - condition: template
                   value_template: >-
-                    {{manufacturer != "Apple" and 
-                    entities is defined and 
-                    (entities|select('search','_android_auto')|list|count==1) and 
-                    (states((entities|select("search","_android_auto")|list)[0])=="on") and 
-                    notify_in_car_using_tts is defined and 
-                    bool(notify_in_car_using_tts,false)==true and 
-                    notify_message is defined and 
-                    notify_message!='TTS'}}
+                    {{is_android_auto_active}}
               sequence:
                 - variables:
                     notify_message_actions_text: !input notify_message_actions_text
                     servicedata: >-
+                      {%- if is_android_auto_active==true and notify_message is defined and notify_message not in ['clear_notification','remove_channel']-%}
                       {#- If actions are defined then process each action title and add it to the notify_message -#}
-                      {% if servicedata['data'] is not defined %}
+                      {%- if servicedata['data'] is not defined -%}
                       {%- set servicedata=dict((servicedata),**({'data':{}})) -%}
-                      {%endif%}
-
+                      {%- endif -%}
                       {%- if servicedata['data'] is defined and servicedata['data']['actions'] is defined -%}
                       {%- set ns=namespace(actions=[]) -%}
                       {%- for action in servicedata['data']['actions'] -%}
@@ -1440,13 +1507,22 @@ sequence:
 
                       {#- Create a data dict with the previous servicedata['data'] information and add to the data the tts_text -#}
                       {#- The tts_text is what will be used for TTS -#}
-                      {%- set servicedata=dict((servicedata),**({'data':dict(servicedata['data'],**{'tts_text':notify_message})})) -%}
 
+                      {%- if notify_message not in ['TTS','clear_notification','remove_channel'] -%}
+                      {%- set servicedata=dict((servicedata),**({'data':dict(servicedata['data'],**{'tts_text':notify_message})})) -%}
                       {#- Create the whole servicedata dict with the previous data information and replace the message with the TTS value -#}
                       {%- set servicedata=dict((servicedata),**({'message':'TTS'})) -%}
+                      {%- endif -%}
 
                       {#- Finally remove the old title from the dict -#}
                       {%- set servicedata=dict.from_keys(servicedata.items()|rejectattr('0','in','title')|list)%}
                       {{servicedata}}
+                      {%- else -%}
+                      {%- if manufacturer == "Apple"  -%}
+                      {%- set servicedata={'comment':'TTS is not supported on Apple Car Play'} -%}
+                      {%- else -%}
+                      {%- set servicedata={'comment':'Android Auto is not active'} -%}
+                      {%- endif -%}
+                      {%- endif %}
                 - service: "{{service}}"
                   data: "{{servicedata}}"
