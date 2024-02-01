@@ -24,7 +24,7 @@ blueprint:
           multiple: false
   description: |-
     **Version: 2024.2**
-
+    
     ## Info ##
     **Struggling to make use of the notification options of the [Home Assistant Companion App](https://companion.home-assistant.io/) on your mobile device?**
     **Then this script can help you in the right direction.**
@@ -882,7 +882,7 @@ fields:
     description: The Entity to navigate to when clicking on the notification
     required: false
     selector:
-      entity: null
+      entity: 
   data_clickaction_url:
     name: URL to navigate to (Optional)
     description: The URL to navigate to when clicking on the notification (custom values allowed)
@@ -910,8 +910,21 @@ fields:
     description: See [building-actionable-notifications](https://companion.home-assistant.io/docs/notifications/actionable-notifications#building-actionable-notifications)
     required: false
     selector:
-      object: null
+      object: 
 sequence:
+  - variables:
+      debug: >-
+        {#- =============== -#}
+        {#-      DEBUG      -#}
+        {#- =============== -#}
+        {%- set debug=true -%}
+        {{debug}}
+      notify_home_or_away: >-
+        {%- if notify_home_or_away is not defined or notify_home_or_away not in ["Home","Away","Both"] -%}
+        {%- set notify_home_or_away="Both" -%}
+        {%- endif -%}
+        {{notify_home_or_away}}
+    enabled: false
   - variables:
       all_devices: >-
         {%- if notify_devices is defined -%}
@@ -958,6 +971,65 @@ sequence:
   - repeat:
       for_each: "{{notify_devices}}"
       sequence:
+        - variables:
+            repeat: >-
+              {#- =============== -#}
+              {#-      DEBUG      -#}
+              {#- =============== -#}
+              {%- if debug==false -%}
+              {%- set repeat={'item':notify_devices[0]} -%}
+              {%- endif -%}
+              {{repeat}}
+            notify_message: >-
+              {#- =============== -#}
+              {#-      DEBUG      -#}
+              {#- =============== -#}
+              {%- if debug==true -%}
+              {%- set notify_message='Shopping List' -%}
+              {{notify_message}}
+              {%- endif -%}
+            data_notification_icon: >-
+              {#- =============== -#}
+              {#-      DEBUG      -#}
+              {#- =============== -#}
+              {%- if debug==true -%}
+              {%- set data_notification_icon='mdi:cart' -%}
+              {{data_notification_icon}}
+              {%- endif -%}
+            data_notification_color: >-
+              {#- =============== -#}
+              {#-      DEBUG      -#}
+              {#- =============== -#}
+              {%- if debug==true -%}
+              {%- set data_notification_color=[255,187,0] -%}
+              {{data_notification_color}}
+              {%- endif -%}
+            notify_title: >-
+              {#- =============== -#}
+              {#-      DEBUG      -#}
+              {#- =============== -#}
+              {%- if debug==true -%}
+              {%- set notify_title='Fareway Shopping List' -%}
+              {{notify_title}}
+              {%- endif -%}
+            data_importance: >-
+              {#- =============== -#}
+              {#-      DEBUG      -#}
+              {#- =============== -#}
+              {%- if debug==true -%}
+              {%- set data_importance='high' -%}
+              {{data_importance}}
+              {%- endif -%}
+            data_clickaction_url: >-
+              {#- =============== -#}
+              {#-      DEBUG      -#}
+              {#- =============== -#}
+              {%- if debug==true -%}
+              {%- set data_clickaction_url='/todo/' -%}
+              {{data_clickaction_url}}
+              {%- endif -%}
+          enabled: false
+
         - variables:
             entity_id: >-
               {%- set entity_id=((device_entities(repeat.item)|select("search","device_tracker")|list)[0]) -%}
@@ -1135,10 +1207,12 @@ sequence:
               {%- if manufacturer!="Apple" and data_notification_color is defined -%}
               {#- The rgb color object selector spits it out as list with r,g and b [255,0,0]. This conflicts with the notification-color documentation, which requires HEX values. It has now been fixed. Thanks to https://github.com/velijv/home-assistant-color-helpers#rgb-to-hex -#}
               {#- Converting the list of [r,g,b] to hex -#}
+              {%- if data_notification_color|length==3 and data_notification_color[0]|is_number and data_notification_color[1]|is_number and data_notification_color[2]|is_number -%}
               {%- for color in data_notification_color -%}
               {%- set ns.hex_color=ns.hex_color+('%02x'%color) -%}
               {%- endfor -%}
               {%- set ns.data=ns.data+[("color",ns.hex_color)] -%}
+              {%- endif -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic#notification-sensitivity--lock-screen-visibility -#}
               {%- if manufacturer!="Apple" and data_visibility is defined -%}
