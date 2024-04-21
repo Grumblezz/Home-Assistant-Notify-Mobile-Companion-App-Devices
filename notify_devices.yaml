@@ -1,5 +1,5 @@
 blueprint:
-  name: Notify Mobile App Devices (2024.2)
+  name: Notify Mobile App Devices (2024.04)
   domain: script
   homeassistant:
     min_version: 2023.6.0
@@ -23,8 +23,8 @@ blueprint:
           custom_value: true
           multiple: false
   description: |-
-    **Version: 2024.2**
-    
+    **Version: 2024.04**
+
     ## Info ##
     **Struggling to make use of the notification options of the [Home Assistant Companion App](https://companion.home-assistant.io/) on your mobile device?**
     **Then this script can help you in the right direction.**
@@ -326,6 +326,12 @@ fields:
       True
     selector:
       boolean:
+  data_alert_once:
+    name: Android Only - Alert Once
+    description: |-
+      On Android you have the option for making a notification only alert once on the device. 
+      This means it will only make a sound, vibrate and/or flash the LED once. 
+      *WARNING* This must be used with a certain tag (see Notification tag `data_tag`).
     required: false
     example: >-
       True
@@ -1180,7 +1186,10 @@ sequence:
               {%- set ns.data=ns.data+[("tag","persistent")] -%}
               {%- endif -%}
               {%- endif -%}
-
+              {#- https://companion.home-assistant.io/docs/notifications/notifications-basic#alert-once -#}
+              {%- if manufacturer!="Apple" and data_tag is defined and data_alert_once is defined and data_alert_once is boolean -%}
+              {%- set ns.data=ns.data+[("alert_once",bool(data_alert_once,false))] -%}
+              {%- endif -%}
               {%- if manufacturer!="Apple" and data_persistent is defined -%}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic#persistent-notification -#}
               {#- making sure that an boolean is specified, otherwise skipping -#}
