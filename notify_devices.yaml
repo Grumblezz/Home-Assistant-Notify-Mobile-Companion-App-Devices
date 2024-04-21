@@ -319,8 +319,13 @@ fields:
   data_tag_clear_notification:
     name: Remove Notifications
     description: |-
-      Removes the notification(s) with a certain tag (see `data_tag`). 
-      To remove/clear the persistent notification(s): Use `data_tag: persistant`. *WARNING* The Notification Message (`notify_message`) will be ignored/overwritten.
+      Removes the notification(s) with a certain tag (see Notification tag `data_tag`). 
+      To remove/clear the persistent notification(s): Use Notification tag `data_tag: persistant`. *WARNING* The Notification Message (`notify_message`) will be ignored/overwritten.
+    required: false
+    example: >-
+      True
+    selector:
+      boolean:
     required: false
     example: >-
       True
