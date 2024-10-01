@@ -1,8 +1,8 @@
 blueprint:
-  name: Notify Mobile App Devices (2024.04)
+  name: Notify Mobile App Devices (2024.08)
   domain: script
   homeassistant:
-    min_version: 2023.6.0
+    min_version: 2024.8.0
   source_url: https://github.com/Grumblezz/Home-Assistant-Notify-Mobile-Companion-App-Devices/blob/main/notify_devices.yaml
   author: Grumblezz
   input:
@@ -23,7 +23,7 @@ blueprint:
           custom_value: true
           multiple: false
   description: |-
-    **Version: 2024.04**
+    **Version: 2024.08**
 
     ## Info ##
     **Struggling to make use of the notification options of the [Home Assistant Companion App](https://companion.home-assistant.io/) on your mobile device?**
@@ -51,7 +51,7 @@ blueprint:
     ### Example 1 ###
     Send a persistent notification, that the user can’t remove.
     ```
-    service: script.notify_devices
+    action: script.notify_devices
     data:
       notify_home_or_away: Both
       data_notification_icon: mdi:human-greeting-variant
@@ -66,7 +66,7 @@ blueprint:
     ### Example 2 ###
     Send a clean_persistent notification, so the notification is removed.
     ```
-    service: script.notify_devices
+    action: script.notify_devices
     data:
       notify_home_or_away: Both
       data_tag: Use this tag when you need to remove it
@@ -90,7 +90,7 @@ blueprint:
      * data_camera: /media/local/audio.mp3
      * data_camera: https://example.com/audio.mp3
     ```
-    service: script.notify_devices
+    action: script.notify_devices
     data:
       notify_home_or_away: Both
       data_notification_icon: mdi:cctv
@@ -103,7 +103,7 @@ blueprint:
     ```
     Sends a Nest camera image file 
     ```
-    service: script.notify_devices
+    action: script.notify_devices
     data:
       notify_home_or_away: Both
       data_notification_icon: mdi:cctv
@@ -124,7 +124,7 @@ blueprint:
     Click [here](https://companion.home-assistant.io/docs/notifications/actionable-notifications#building-actionable-notifications) for the documentation
     **This script filters the actions per device. This means you can send information to Android and iOS device simultaneously 🙂 .**
     ```
-    service: script.notify_devices
+    action: script.notify_devices
     data:
       notify_home_or_away: Both
       data_notification_icon: mdi:gesture-tap-button
@@ -995,7 +995,7 @@ sequence:
               {#- =============== -#}
               {#-      DEBUG      -#}
               {#- =============== -#}
-              {%- if debug==true -%}
+              {%- if debug==true and notify_message is not defined -%}
               {%- set notify_message='Shopping List' %}
               {{notify_message}}
               {%- endif %}
@@ -1003,7 +1003,7 @@ sequence:
               {#- =============== -#}
               {#-      DEBUG      -#}
               {#- =============== -#}
-              {%- if debug==true -%}
+              {%- if debug==true and notify_message is not defined -%}
               {%- set data_notification_icon='mdi:cart' %}
               {{data_notification_icon}}
               {%- endif %}
@@ -1011,7 +1011,7 @@ sequence:
               {#- =============== -#}
               {#-      DEBUG      -#}
               {#- =============== -#}
-              {%- if debug==true -%}
+              {%- if debug==true and notify_message is not defined -%}
               {%- set data_notification_color=[255,187,0] %}
               {{data_notification_color}}
               {%- endif %}
@@ -1019,7 +1019,7 @@ sequence:
               {#- =============== -#}
               {#-      DEBUG      -#}
               {#- =============== -#}
-              {%- if debug==true -%}
+              {%- if debug==true and notify_message is not defined -%}
               {%- set notify_title='Fareway Shopping List' %}
               {{notify_title}}
               {%- endif %}
@@ -1027,7 +1027,7 @@ sequence:
               {#- =============== -#}
               {#-      DEBUG      -#}
               {#- =============== -#}
-              {%- if debug==true -%}
+              {%- if debug==true and notify_message is not defined -%}
               {%- set data_importance='high' %}
               {{data_importance}}
               {%- endif %}
@@ -1035,7 +1035,7 @@ sequence:
               {#- =============== -#}
               {#-      DEBUG      -#}
               {#- =============== -#}
-              {%- if debug==true -%}
+              {%- if debug==true and notify_message is not defined -%}
               {%- set data_clickaction_url='/todo/' %}
               {{data_clickaction_url}}
               {%- endif %}
@@ -1314,13 +1314,14 @@ sequence:
               {#- * data_camera: https://example.com/audio.mp3 -#}
               {%- if data_camera is defined -%}
               {#- * data_camera: camera.name -#}
+              {%- set attachment=[] -%}
               {%- if states(data_camera)!="unknown" -%}
                 {%- if manufacturer!="Apple" -%}
                 {#- https://companion.home-assistant.io/docs/notifications/notification-attachments#automatic-snapshots -#}
-                {%- set ns.data=ns.data+[("image","/api/camera_proxy/"~data_camera)] -%}
+                {%- set attachment=[("image","/api/camera_proxy/"~data_camera)] -%}
                 {%- else -%}
                 {#- https://companion.home-assistant.io/docs/notifications/dynamic-content#camera-stream -#}
-                {%- set ns.data=ns.data+[("entity_id",data_camera)] -%}
+                {%- set attachment=[("entity_id",data_camera)] -%}
                 {%- endif -%}
               {%- endif -%}
               {#- https://www.home-assistant.io/integrations/nest/#media-attachments -#}
@@ -1328,28 +1329,33 @@ sequence:
               {#- * video is data_camera: /api/nest/event_media/{{ trigger.event.data.device_id }}/{{ trigger.event.data.nest_event_id }} -#}
               {%- if states(data_camera) == "unknown" and data_camera is search("/api/nest/event_media/",ignorecase=False) -%}
                 {%- if states(data_camera) == "unknown" and data_camera is search("/thumbnail",ignorecase=False) -%}
-                {%- set ns.data=ns.data+[("image",data_camera)] -%}
-                {%- set ns.data=ns.data+[("video",(data_camera|replace("/thumbnail","")))] -%}
+                {%- set attachment=[("image",data_camera)]+[("video",(data_camera|replace("/thumbnail","")))] -%}
                 {%- endif -%}
                 {%- if states(data_camera) == "unknown" and (data_camera|regex_match('^((\/)(\w+)){5}$', ignorecase=False)) -%}
-                {%- set ns.data=ns.data+[("video",data_camera)] -%}
+                {%- set attachment=[("video",data_camera)] -%}
                 {%- endif -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notification-attachments#downloading -#}
               {#- check if data_camera is an allowed format from the media_source or www folder -#}
-              {%- if data_camera is search("/media/local/",ignorecase=true) or data_camera is search("/local/",ignorecase=true) or data_camera is search("https://",ignorecase=true) or data_camera is search("http://",ignorecase=true) -%}
+              {%- if states(data_camera) == "unknown" and (
+                  data_camera is search("/media/",ignorecase=true) or 
+                  data_camera is search("/local/",ignorecase=true) or 
+                  data_camera is search("https://",ignorecase=true) or 
+                  data_camera is search("http://",ignorecase=true) or 
+                  data_camera is search("media-source://",ignorecase=true)
+                  )  -%}
                 
                 {#- check if it is an allowed format for the image type: https://companion.home-assistant.io/docs/notifications/notification-attachments#supported-media-types -#}
                 {%- if data_camera is search(".jpg",ignorecase=true) or 
                   data_camera is search(".gif",ignorecase=true) or 
                   data_camera is search(".png",ignorecase=true) -%}
-                {%- set ns.data=ns.data+[("image",data_camera)] -%}
+                {%- set attachment=[("image",data_camera)] -%}
                 {%- endif -%}
                 {#- check if it is an allowed format for the video type: https://companion.home-assistant.io/docs/notifications/notification-attachments#supported-media-types -#}
                 {%- if data_camera is search(".mp4",ignorecase=true) or 
                   data_camera is search(".mpeg",ignorecase=true) or 
                   data_camera is search(".avi",ignorecase=true) -%}
-                {%- set ns.data=ns.data+[("video",data_camera)] -%}
+                {%- set attachment=[("video",data_camera)] -%}
                 {%- endif -%}
                 
                 {#- audio is only supported by iOS devices -#} 
@@ -1359,9 +1365,13 @@ sequence:
                   data_camera is search(".aiff",ignorecase=true) or 
                   data_camera is search(".wav",ignorecase=true) 
                 ) -%}
-                {%- set ns.data=ns.data+[("audio",data_camera)] -%}
+                {%- set attachment=[("audio",data_camera)] -%}
                 {%- endif -%}
               {%- endif -%}
+              {%- if attachment|count == 0 -%}
+              {%- set attachment=[("image",data_camera)] -%}
+              {%- endif -%}
+              {%- set ns.data=ns.data+attachment -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/notification-sounds -#}
               {#- https://companion.home-assistant.io/docs/notifications/notifications-basic#sounds -#}
@@ -1472,7 +1482,7 @@ sequence:
                   value_template: >
                     {{notify_condition}}
               sequence:
-                - service: "{{service}}"
+                - action: "{{service}}"
                   data: >-
                     {%- if notify_condition==true -%}
                     {{servicedata}}
@@ -1538,5 +1548,5 @@ sequence:
                       {%- endif -%}
                       {%- endif %}
                       {{servicedata}}
-                - service: "{{service}}"
+                - action: "{{service}}"
                   data: "{{servicedata}}"
