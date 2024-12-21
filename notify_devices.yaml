@@ -189,6 +189,7 @@ fields:
       • Select `Home` when you only want to notify those devices that are in the zone Home.
       • Select `Away` when you only want to notify those devices that are NOT in the zone Home.
       • Select `Both` when it does not matter where those devices are, they will be notified. 
+      • Select `Prefer Home otherwise Away` when you need to notify those that are home, or when none the devices are home then notify those that are away.
       If not specified, then `Both` will be used.
     required: false
     example: Both
@@ -200,6 +201,7 @@ fields:
           - Home
           - Away
           - Both
+          - Prefer Home otherwise Away
   data_notification_icon:
     name: Android Only - Notification icon (Optional)
     description: Change the default notification status bar icon to an mdi icon
@@ -940,7 +942,7 @@ sequence:
         {%- set debug=true %}
         {{debug}}
       notify_home_or_away: >
-        {%- if notify_home_or_away is not defined or notify_home_or_away not in ["Home","Away","Both"] -%}
+        {%- if notify_home_or_away is not defined or notify_home_or_away not in ["Home","Away","Both","Prefer Home otherwise Away"] -%}
         {%- set notify_home_or_away="Both" -%}
         {%- endif %}
         {{notify_home_or_away}}
@@ -1000,13 +1002,21 @@ sequence:
         {%- set notify_devices_away=ns_devices_away.device_id %}
         {{notify_devices_away}}
       notify_devices: >-
-        {%- if notify_home_or_away is not defined or notify_home_or_away not in ["Home","Away","Both"] -%}
+        {%- if notify_home_or_away is not defined or notify_home_or_away not in ["Home","Away","Both","Prefer Home otherwise Away"] -%}
         {%- set notify_home_or_away="Both" -%}
         {%- endif -%}
         {#- Finally, let the value "notify_home_or_away" control which list should used -#}
+        {%- set notify_devices=all_devices -%}
         {%- if notify_home_or_away == "Home" -%}{%- set notify_devices=notify_devices_home -%}{%- endif -%}
         {%- if notify_home_or_away == "Away" -%}{%- set notify_devices=notify_devices_away -%}{%- endif -%}
         {%- if notify_home_or_away == "Both" -%}{%- set notify_devices=all_devices -%}{%- endif %}
+        {%- if notify_home_or_away == "Prefer Home otherwise Away" -%}
+          {%- if notify_devices_home|count >= 1 -%}
+          {%- set notify_devices=notify_devices_home -%}
+          {%- else -%}
+          {%- set notify_devices=notify_devices_away -%}
+          {%- endif -%}
+        {%- endif %}
         {{notify_devices}}
   - repeat:
       for_each: "{{notify_devices}}"
