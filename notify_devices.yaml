@@ -1,8 +1,8 @@
 blueprint:
-  name: Notify Mobile App Devices (2024.08)
+  name: Notify Mobile App Devices (2024.12)
   domain: script
   homeassistant:
-    min_version: 2024.8.0
+    min_version: 2024.10.0
   source_url: https://github.com/Grumblezz/Home-Assistant-Notify-Mobile-Companion-App-Devices/blob/main/notify_devices.yaml
   author: Grumblezz
   input:
@@ -23,7 +23,7 @@ blueprint:
           custom_value: true
           multiple: false
   description: |-
-    **Version: 2024.08**
+    **Version: 2024.12**
 
     ## Info ##
     **Struggling to make use of the notification options of the [Home Assistant Companion App](https://companion.home-assistant.io/) on your mobile device?**
