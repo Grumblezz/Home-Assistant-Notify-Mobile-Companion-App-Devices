@@ -186,9 +186,9 @@ fields:
     name: Notify those that are Home or Away?
     description: |-
       With this option you can filter the devices based on their location. 
-      • Select `Home` when you only want to notify those (`notify_devices`) devices that are in the zone Home.
-      • Select `Away` when you only want to notify those (`notify_devices`) devices that are NOT in the zone Home.
-      • Select `Both` when it does not matter where those (`notify_devices`) devices are, they will be notified. 
+      • Select `Home` when you only want to notify those devices that are in the zone Home.
+      • Select `Away` when you only want to notify those devices that are NOT in the zone Home.
+      • Select `Both` when it does not matter where those devices are, they will be notified. 
       If not specified, then `Both` will be used.
     required: false
     example: Both
