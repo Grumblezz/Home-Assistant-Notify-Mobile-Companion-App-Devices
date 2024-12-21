@@ -1496,6 +1496,7 @@ sequence:
                     {{notify_condition}}
               sequence:
                 - action: "{{service}}"
+                  continue_on_error: true
                   data: >-
                     {%- if notify_condition==true -%}
                     {{servicedata}}
@@ -1562,4 +1563,5 @@ sequence:
                       {%- endif %}
                       {{servicedata}}
                 - action: "{{service}}"
+                  continue_on_error: true
                   data: "{{servicedata}}"
