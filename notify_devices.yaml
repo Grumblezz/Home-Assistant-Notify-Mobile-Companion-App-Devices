@@ -173,6 +173,15 @@ fields:
         filter:
           - integration: mobile_app
         multiple: true
+  filter_zones:
+    name: Device(s) to notify in a zone
+    description: Only include devices that are in the specified zone(s). The device needs to run the official Home Assistant app to receive notifications. If not specified, then all devices are used.
+    selector:
+      entity:
+        multiple: true
+        filter:
+          domain: zone
+    required: false
   notify_home_or_away:
     name: Notify those that are Home or Away?
     description: |-
@@ -938,17 +947,37 @@ sequence:
     enabled: false
   - variables:
       all_devices: >-
-        {%- if notify_devices is defined -%}
-        {#- If the user uses the field "notify_devices" then use that/those device(s) -#}
-        {%- set all_devices=notify_devices -%}
-        {%- else -%}
-        {#- If the user does not use the field "notify_devices" then find the device_tracker(s) that use the integration mobile_app -#}
+        {%- set mobile_app_device_tracker=integration_entities("mobile_app")|select('search','device_tracker')|list -%}
         {%- set ns_devices=namespace( device_id=[] ) -%}
-        {%- for e in (integration_entities("mobile_app")|select("search","device_tracker")|list) -%}
-        {%- set ns_devices.device_id=ns_devices.device_id+[device_id(e)] -%}
+        {%- for e in mobile_app_device_tracker if has_value(e) -%}
+          {%- set ns_devices.device_id=ns_devices.device_id+[device_id(e)] -%}
         {%- endfor -%}
         {%- set all_devices=ns_devices.device_id -%}
+
+        {#- If the user uses the field "filter_zones" then use that/those device(s) -#}
+        {%- if filter_zones is defined and filter_zones is list -%}          
+          {%- set ns_devices=namespace( device_id=[] ) -%}
+          {%- for z in filter_zones -%}
+            {%- for p in state_attr(z,'persons') -%}
+              {%- for d in state_attr(p,'device_trackers') -%}
+                {%- set ns_devices.device_id=ns_devices.device_id+([device_id(d)] if ([d]|select('in',mobile_app_device_tracker)|list|count==1) else []) -%}
+              {%- endfor-%}
+            {%- endfor-%}
+          {%- endfor-%}
+          {%- set all_devices=ns_devices.device_id -%}
         {%- endif %}
+
+        {#- If the user uses the field "notify_devices" then use that/those device(s) -#}
+        {%- if notify_devices is defined and notify_devices is list -%}
+          {%- if filter_zones is defined and filter_zones is list -%}
+            {#- If the user uses the field "filter_zones" AND "notify_devices" then use that/those device(s) -#}
+            {%- set all_devices=notify_devices|select('in',all_devices)|list -%}
+          {%- else -%}
+            {%- set all_devices=notify_devices -%}
+          {%- endif %}
+        {%- endif %}
+
+        {#- finally -#}
         {{all_devices}}
       notify_devices_home: >-
         {#- filter "all_devices" whether those that have the state "home" -#}
