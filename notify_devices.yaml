@@ -173,6 +173,15 @@ fields:
         filter:
           - integration: mobile_app
         multiple: true
+  exclude_notify_devices:
+    name: Exclude Device to notify
+    description: Device needs to run the official Home Assistant app to receive notifications. If not specified, then all devices are used.
+    required: false
+    selector:
+      device:
+        filter:
+          - integration: mobile_app
+        multiple: true
   notify_home_or_away:
     name: Notify those that are Home or Away?
     description: |-
@@ -948,6 +957,10 @@ sequence:
         {%- set ns_devices.device_id=ns_devices.device_id+[device_id(e)] -%}
         {%- endfor -%}
         {%- set all_devices=ns_devices.device_id -%}
+        {%- endif %}
+        {%- if exclude_notify_devices is defined -%}
+        {#- If the user uses the field "exclude_notify_devices" then exclude that/those device(s) -#}
+        {%- set all_devices=all_devices|reject('in',exclude_notify_devices)|list -%}
         {%- endif %}
         {{all_devices}}
       notify_devices_home: >-
