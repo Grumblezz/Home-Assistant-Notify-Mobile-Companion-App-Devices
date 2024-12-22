@@ -186,9 +186,10 @@ fields:
     name: Notify those that are Home or Away?
     description: |-
       With this option you can filter the devices based on their location. 
-      • Select `Home` when you only want to notify those (`notify_devices`) devices that are in the zone Home.
-      • Select `Away` when you only want to notify those (`notify_devices`) devices that are NOT in the zone Home.
-      • Select `Both` when it does not matter where those (`notify_devices`) devices are, they will be notified. 
+      • Select `Home` when you only want to notify those devices that are in the zone Home.
+      • Select `Away` when you only want to notify those devices that are NOT in the zone Home.
+      • Select `Both` when it does not matter where those devices are, they will be notified. 
+      • Select `Prefer Home otherwise Away` when you need to notify those that are home, or when none the devices are home then notify those that are away.
       If not specified, then `Both` will be used.
     required: false
     example: Both
@@ -200,6 +201,7 @@ fields:
           - Home
           - Away
           - Both
+          - Prefer Home otherwise Away
   data_notification_icon:
     name: Android Only - Notification icon (Optional)
     description: Change the default notification status bar icon to an mdi icon
@@ -940,28 +942,48 @@ sequence:
         {%- set debug=true %}
         {{debug}}
       notify_home_or_away: >
-        {%- if notify_home_or_away is not defined or notify_home_or_away not in ["Home","Away","Both"] -%}
+        {%- if notify_home_or_away is not defined or notify_home_or_away not in ["Home","Away","Both","Prefer Home otherwise Away"] -%}
         {%- set notify_home_or_away="Both" -%}
         {%- endif %}
         {{notify_home_or_away}}
     enabled: false
   - variables:
       all_devices: >-
-        {%- if notify_devices is defined -%}
-        {#- If the user uses the field "notify_devices" then use that/those device(s) -#}
-        {%- set all_devices=notify_devices -%}
-        {%- else -%}
-        {#- If the user does not use the field "notify_devices" then find the device_tracker(s) that use the integration mobile_app -#}
+        {%- set mobile_app_device_tracker=integration_entities("mobile_app")|select('search','device_tracker')|list -%}
         {%- set ns_devices=namespace( device_id=[] ) -%}
-        {%- for e in (integration_entities("mobile_app")|select("search","device_tracker")|list) -%}
-        {%- set ns_devices.device_id=ns_devices.device_id+[device_id(e)] -%}
+        {%- for e in mobile_app_device_tracker if has_value(e) -%}
+          {%- set ns_devices.device_id=ns_devices.device_id+[device_id(e)] -%}
         {%- endfor -%}
         {%- set all_devices=ns_devices.device_id -%}
+
+        {#- If the user uses the field "filter_zones" then use that/those device(s) -#}
+        {%- if filter_zones is defined and filter_zones is list -%}          
+          {%- set ns_devices=namespace( device_id=[] ) -%}
+          {%- for z in filter_zones -%}
+            {%- for p in state_attr(z,'persons') -%}
+              {%- for d in state_attr(p,'device_trackers') -%}
+                {%- set ns_devices.device_id=ns_devices.device_id+([device_id(d)] if ([d]|select('in',mobile_app_device_tracker)|list|count==1) else []) -%}
+              {%- endfor-%}
+            {%- endfor-%}
+          {%- endfor-%}
+          {%- set all_devices=ns_devices.device_id -%}
         {%- endif %}
         {%- if exclude_notify_devices is defined -%}
         {#- If the user uses the field "exclude_notify_devices" then exclude that/those device(s) -#}
         {%- set all_devices=all_devices|reject('in',exclude_notify_devices)|list -%}
         {%- endif %}
+
+        {#- If the user uses the field "notify_devices" then use that/those device(s) -#}
+        {%- if notify_devices is defined and notify_devices is list -%}
+          {%- if filter_zones is defined and filter_zones is list -%}
+            {#- If the user uses the field "filter_zones" AND "notify_devices" then use that/those device(s) -#}
+            {%- set all_devices=notify_devices|select('in',all_devices)|list -%}
+          {%- else -%}
+            {%- set all_devices=notify_devices -%}
+          {%- endif %}
+        {%- endif %}
+
+        {#- finally -#}
         {{all_devices}}
       notify_devices_home: >-
         {#- filter "all_devices" whether those that have the state "home" -#}
@@ -984,13 +1006,21 @@ sequence:
         {%- set notify_devices_away=ns_devices_away.device_id %}
         {{notify_devices_away}}
       notify_devices: >-
-        {%- if notify_home_or_away is not defined or notify_home_or_away not in ["Home","Away","Both"] -%}
+        {%- if notify_home_or_away is not defined or notify_home_or_away not in ["Home","Away","Both","Prefer Home otherwise Away"] -%}
         {%- set notify_home_or_away="Both" -%}
         {%- endif -%}
         {#- Finally, let the value "notify_home_or_away" control which list should used -#}
+        {%- set notify_devices=all_devices -%}
         {%- if notify_home_or_away == "Home" -%}{%- set notify_devices=notify_devices_home -%}{%- endif -%}
         {%- if notify_home_or_away == "Away" -%}{%- set notify_devices=notify_devices_away -%}{%- endif -%}
         {%- if notify_home_or_away == "Both" -%}{%- set notify_devices=all_devices -%}{%- endif %}
+        {%- if notify_home_or_away == "Prefer Home otherwise Away" -%}
+          {%- if notify_devices_home|count >= 1 -%}
+          {%- set notify_devices=notify_devices_home -%}
+          {%- else -%}
+          {%- set notify_devices=notify_devices_away -%}
+          {%- endif -%}
+        {%- endif %}
         {{notify_devices}}
   - repeat:
       for_each: "{{notify_devices}}"
