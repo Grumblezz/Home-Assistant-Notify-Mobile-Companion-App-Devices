@@ -968,10 +968,6 @@ sequence:
           {%- endfor-%}
           {%- set all_devices=ns_devices.device_id -%}
         {%- endif %}
-        {%- if exclude_notify_devices is defined -%}
-        {#- If the user uses the field "exclude_notify_devices" then exclude that/those device(s) -#}
-        {%- set all_devices=all_devices|reject('in',exclude_notify_devices)|list -%}
-        {%- endif %}
 
         {#- If the user uses the field "notify_devices" then use that/those device(s) -#}
         {%- if notify_devices is defined and notify_devices is list -%}
@@ -981,6 +977,11 @@ sequence:
           {%- else -%}
             {%- set all_devices=notify_devices -%}
           {%- endif %}
+        {%- endif %}
+
+        {#- If the user uses the field "exclude_notify_devices" then exclude that/those device(s) -#}
+        {%- if exclude_notify_devices is defined and exclude_notify_devices is list -%}
+          {%- set all_devices=all_devices|reject('in',exclude_notify_devices)|list -%}
         {%- endif %}
 
         {#- finally -#}
