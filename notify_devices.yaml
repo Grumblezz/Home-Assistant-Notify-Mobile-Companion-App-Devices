@@ -1198,14 +1198,14 @@ sequence:
               {%- if data_device_ring is defined and (data_device_ring|lower) in ["on","max"] -%}
               {%- set data_importance="high" -%}
               {#- https://companion.home-assistant.io/docs/notifications/critical-notifications#android-text-to-speech-alarm-stream -#}
-              {%- if (data_device_ring|lower)=="on" and bool(notify_tts,false)==true -%}
+              {%- if (data_device_ring|lower)=="on" and notify_tts is defined and bool(notify_tts,false)==true -%}
               {%- set ns.data=ns.data+[("media_stream","alarm_stream")] -%}
               {%- endif -%}
-              {%- if (data_device_ring|lower)=="on" and bool(notify_tts,false)!=true -%}
+              {%- if (data_device_ring|lower)=="on" and (notify_tts is not defined or (notify_tts is defined and bool(notify_tts,false)!=true)) -%}
               {%- set ns.data=ns.data+[("channel","alarm_stream")] -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/critical-notifications#android-text-to-speech-alarm-stream-max-volume -#}
-              {%- if (data_device_ring|lower)=="max" and bool(notify_tts,false)==true -%}
+              {%- if (data_device_ring|lower)=="max" and notify_tts is defined and bool(notify_tts,false)==true -%}
               {%- set ns.data=ns.data+[("media_stream","alarm_stream_max")] -%}
               {%- set data_importance="high" -%}
               {%- endif -%}
