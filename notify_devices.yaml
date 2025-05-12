@@ -1,5 +1,5 @@
 blueprint:
-  name: Notify Mobile App Devices (2024.12)
+  name: Notify Mobile App Devices (2025.05)
   domain: script
   homeassistant:
     min_version: 2024.10.0
@@ -23,7 +23,7 @@ blueprint:
           custom_value: true
           multiple: false
   description: |-
-    **Version: 2024.12**
+    **Version: 2025.05**
 
     ## Info ##
     **Struggling to make use of the notification options of the [Home Assistant Companion App](https://companion.home-assistant.io/) on your mobile device?**
@@ -173,9 +173,18 @@ fields:
         filter:
           - integration: mobile_app
         multiple: true
+  filter_zones:
+    name: Device(s) to notify in a zone
+    description: Only include devices that are in the specified zone(s). The device needs to run the official Home Assistant app to receive notifications. If not specified, then all devices are used.
+    selector:
+      entity:
+        multiple: true
+        filter:
+          domain: zone
+    required: false
   exclude_notify_devices:
     name: Exclude Device to notify
-    description: Device needs to run the official Home Assistant app to receive notifications. If not specified, then all devices are used.
+    description: Exclude devices that should NOT(!) be notified. Device needs to run the official Home Assistant app to receive notifications. If not specified, then all devices are used.
     required: false
     selector:
       device:
@@ -968,10 +977,6 @@ sequence:
           {%- endfor-%}
           {%- set all_devices=ns_devices.device_id -%}
         {%- endif %}
-        {%- if exclude_notify_devices is defined -%}
-        {#- If the user uses the field "exclude_notify_devices" then exclude that/those device(s) -#}
-        {%- set all_devices=all_devices|reject('in',exclude_notify_devices)|list -%}
-        {%- endif %}
 
         {#- If the user uses the field "notify_devices" then use that/those device(s) -#}
         {%- if notify_devices is defined and notify_devices is list -%}
@@ -981,6 +986,11 @@ sequence:
           {%- else -%}
             {%- set all_devices=notify_devices -%}
           {%- endif %}
+        {%- endif %}
+
+        {#- If the user uses the field "exclude_notify_devices" then exclude that/those device(s) -#}
+        {%- if exclude_notify_devices is defined and exclude_notify_devices is list -%}
+          {%- set all_devices=all_devices|reject('in',exclude_notify_devices)|list -%}
         {%- endif %}
 
         {#- finally -#}
@@ -1198,14 +1208,14 @@ sequence:
               {%- if data_device_ring is defined and (data_device_ring|lower) in ["on","max"] -%}
               {%- set data_importance="high" -%}
               {#- https://companion.home-assistant.io/docs/notifications/critical-notifications#android-text-to-speech-alarm-stream -#}
-              {%- if (data_device_ring|lower)=="on" and bool(notify_tts,false)==true -%}
+              {%- if (data_device_ring|lower)=="on" and notify_tts is defined and bool(notify_tts,false)==true -%}
               {%- set ns.data=ns.data+[("media_stream","alarm_stream")] -%}
               {%- endif -%}
-              {%- if (data_device_ring|lower)=="on" and bool(notify_tts,false)!=true -%}
+              {%- if (data_device_ring|lower)=="on" and (notify_tts is not defined or (notify_tts is defined and bool(notify_tts,false)!=true)) -%}
               {%- set ns.data=ns.data+[("channel","alarm_stream")] -%}
               {%- endif -%}
               {#- https://companion.home-assistant.io/docs/notifications/critical-notifications#android-text-to-speech-alarm-stream-max-volume -#}
-              {%- if (data_device_ring|lower)=="max" and bool(notify_tts,false)==true -%}
+              {%- if (data_device_ring|lower)=="max" and notify_tts is defined and bool(notify_tts,false)==true -%}
               {%- set ns.data=ns.data+[("media_stream","alarm_stream_max")] -%}
               {%- set data_importance="high" -%}
               {%- endif -%}
