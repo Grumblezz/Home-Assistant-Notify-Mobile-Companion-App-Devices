@@ -184,7 +184,7 @@ fields:
     required: false
   exclude_notify_devices:
     name: Exclude Device to notify
-    description: Device needs to run the official Home Assistant app to receive notifications. If not specified, then all devices are used.
+    description: Exclude devices that should NOT(!) be notified. Device needs to run the official Home Assistant app to receive notifications. If not specified, then all devices are used.
     required: false
     selector:
       device:
