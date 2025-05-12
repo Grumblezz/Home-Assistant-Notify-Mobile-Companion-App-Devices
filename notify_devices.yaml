@@ -173,6 +173,15 @@ fields:
         filter:
           - integration: mobile_app
         multiple: true
+  filter_zones:
+    name: Device(s) to notify in a zone
+    description: Only include devices that are in the specified zone(s). The device needs to run the official Home Assistant app to receive notifications. If not specified, then all devices are used.
+    selector:
+      entity:
+        multiple: true
+        filter:
+          domain: zone
+    required: false
   exclude_notify_devices:
     name: Exclude Device to notify
     description: Device needs to run the official Home Assistant app to receive notifications. If not specified, then all devices are used.
