@@ -1,5 +1,5 @@
 blueprint:
-  name: Notify Mobile App Devices (2025.05)
+  name: Notify Mobile App Devices (2025.09)
   domain: script
   homeassistant:
     min_version: 2024.10.0
@@ -23,7 +23,7 @@ blueprint:
           custom_value: true
           multiple: false
   description: |-
-    **Version: 2025.05**
+    **Version: 2025.09**
 
     ## Info ##
     **Struggling to make use of the notification options of the [Home Assistant Companion App](https://companion.home-assistant.io/) on your mobile device?**
@@ -957,40 +957,46 @@ sequence:
         {{notify_home_or_away}}
     enabled: false
   - variables:
-      all_devices: >-
-        {%- set mobile_app_device_tracker=integration_entities("mobile_app")|select('search','device_tracker')|list -%}
-        {%- set ns_devices=namespace( device_id=[] ) -%}
-        {%- for e in mobile_app_device_tracker if has_value(e) -%}
-          {%- set ns_devices.device_id=ns_devices.device_id+[device_id(e)] -%}
+      all_zones: >-
+        {% set all_zones=states.zone|map(attribute='entity_id')|list -%}
+        {{all_zones}}
+      mobile_app_entities: >-
+        {% set mobile_app_entities=integration_entities("mobile_app")|select('search','device_tracker')|list -%}
+        {{mobile_app_entities}}
+      mobile_app_devices: >-
+        {% set mobile_app=namespace( device_id=[] ) -%}
+        {%- for e in mobile_app_entities -%}
+        {%- set mobile_app.device_id=mobile_app.device_id+[device_id(e)]-%}
         {%- endfor -%}
-        {%- set all_devices=ns_devices.device_id -%}
-
-        {#- If the user uses the field "filter_zones" then use that/those device(s) -#}
-        {%- if filter_zones is defined and filter_zones is list -%}          
-          {%- set ns_devices=namespace( device_id=[] ) -%}
-          {%- for z in filter_zones -%}
-            {%- for p in state_attr(z,'persons') -%}
-              {%- for d in state_attr(p,'device_trackers') -%}
-                {%- set ns_devices.device_id=ns_devices.device_id+([device_id(d)] if ([d]|select('in',mobile_app_device_tracker)|list|count==1) else []) -%}
-              {%- endfor-%}
-            {%- endfor-%}
-          {%- endfor-%}
-          {%- set all_devices=ns_devices.device_id -%}
-        {%- endif %}
+        {%- set mobile_app_devices=mobile_app.device_id+[] -%}
+        {{mobile_app_devices}}
+      all_devices: >-
+        {% set all_devices=mobile_app_devices -%}
 
         {#- If the user uses the field "notify_devices" then use that/those device(s) -#}
         {%- if notify_devices is defined and notify_devices is list -%}
-          {%- if filter_zones is defined and filter_zones is list -%}
-            {#- If the user uses the field "filter_zones" AND "notify_devices" then use that/those device(s) -#}
-            {%- set all_devices=notify_devices|select('in',all_devices)|list -%}
-          {%- else -%}
-            {%- set all_devices=notify_devices -%}
-          {%- endif %}
+          {%- set all_devices=notify_devices|select('in',mobile_app_devices)|unique|list -%}
+        {%- endif %}
+
+        {#- If the user uses the field "filter_zones" then use that/those device(s) -#}
+        {%- if filter_zones is defined and filter_zones is list -%}
+          {%- set ns_devices=namespace( device_id=[] ) -%}
+          {%- for z in filter_zones|select('in',all_zones)|list -%}
+            {%- for p in state_attr(z,'persons') -%}
+              {#- Add each device which is attached to each person when the device is registered as a mobile_app -#}
+              {%- for dt in state_attr(p,'device_trackers') -%}
+                {%- set ns_devices.device_id=ns_devices.device_id+([device_id(dt)] if ([dt]|select('in',mobile_app_entities)|list|count==1) else []) -%}
+              {%- endfor-%}
+            {%- endfor-%}
+          {%- endfor-%}
+          {%- set all_devices=ns_devices.device_id|unique|list -%}
         {%- endif %}
 
         {#- If the user uses the field "exclude_notify_devices" then exclude that/those device(s) -#}
         {%- if exclude_notify_devices is defined and exclude_notify_devices is list -%}
-          {%- set all_devices=all_devices|reject('in',exclude_notify_devices)|list -%}
+          {#- Filter the `exclude_notify_devices` so non mobile_app devices are excluded -#}
+          {%- set exclude_notify_devices=exclude_notify_devices|select('in',mobile_app_devices)|unique|list -%}
+          {%- set all_devices=all_devices|reject('in',(exclude_notify_devices|select('in',mobile_app_devices)|list))|list -%}
         {%- endif %}
 
         {#- finally -#}
@@ -998,20 +1004,24 @@ sequence:
       notify_devices_home: >-
         {#- filter "all_devices" whether those that have the state "home" -#}
         {%- set ns_devices_home=namespace( device_id=[] ) -%}
-        {%- for device_id in all_devices -%}
-        {%- if states((device_entities(device_id)|select("search","device_tracker")|list)[0]) == "home" -%}
-        {%- set ns_devices_home.device_id=ns_devices_home.device_id + [device_id] -%}
+        {%- for d in all_devices -%}
+        {%- for e in (device_entities(d)|select("search","device_tracker")|select('in',mobile_app_entities)|list) -%}
+        {%- if states(e) == "home" -%}
+        {%- set ns_devices_home.device_id=ns_devices_home.device_id + [d] -%}
         {%- endif -%}
+        {%- endfor -%}
         {%- endfor -%}
         {%- set notify_devices_home=ns_devices_home.device_id %}
         {{notify_devices_home}}
       notify_devices_away: >-
         {#- filter "all_devices" whether those that do not have the state "home" -#}
         {%- set ns_devices_away=namespace( device_id=[]) -%}
-        {%- for device_id in all_devices -%}
-        {%- if states((device_entities(device_id)|select("search","device_tracker")|list)[0]) != "home" -%}
-        {%- set ns_devices_away.device_id=ns_devices_away.device_id + [device_id] -%}
+        {%- for d in all_devices -%}
+        {%- for e in (device_entities(d)|select("search","device_tracker")|select('in',mobile_app_entities)|list) -%}
+        {%- if states(e) != "home" -%}
+        {%- set ns_devices_away.device_id=ns_devices_away.device_id + [d] -%}
         {%- endif -%}
+        {%- endfor -%}
         {%- endfor -%}
         {%- set notify_devices_away=ns_devices_away.device_id %}
         {{notify_devices_away}}
