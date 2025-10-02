@@ -1,5 +1,5 @@
 blueprint:
-  name: Notify Mobile App Devices (2025.09)
+  name: Notify Mobile App Devices (2025.10)
   domain: script
   homeassistant:
     min_version: 2024.10.0
@@ -23,7 +23,7 @@ blueprint:
           custom_value: true
           multiple: false
   description: |-
-    **Version: 2025.09**
+    **Version: 2025.10**
 
     ## Info ##
     **Struggling to make use of the notification options of the [Home Assistant Companion App](https://companion.home-assistant.io/) on your mobile device?**
@@ -267,6 +267,26 @@ fields:
       true
     selector:
       boolean:
+  notify_when_schedule_is_on:
+    name: Only send when the Schedule is ON
+    description: Only send the notification when the schedule entity is 'on', otherwise the notification is NOT send
+    required: false
+    example: "schedule.vacuum_robot"
+    selector:
+      entity:
+        multiple: false
+        filter:
+          - domain: schedule
+  notify_when_schedule_is_off:
+    name: Only send when the Schedule is OFF
+    description: Only send the notification when the schedule entity is 'off', otherwise the notification is NOT send
+    required: false
+    example: "schedule.do_not_disturb"
+    selector:
+      entity:
+        multiple: false
+        filter:
+          - domain: schedule
   data_group:
     name: Notification grouping (Optional)
     description: Combine notification together visually. Custom values are allowed.
@@ -957,6 +977,31 @@ sequence:
         {{notify_home_or_away}}
     enabled: false
   - variables:
+      notify_when_schedules_are_met: >-
+        {%- set notify_when_schedules_are_met=false %}
+        {%- set existing_schedules=states.schedule|map(attribute='entity_id')|list -%}
+        {% if notify_when_schedule_is_on is defined or notify_when_schedule_is_off is defined -%}
+        {%- if notify_when_schedule_is_on is defined and (has_value(notify_when_schedule_is_on) and notify_when_schedule_is_on in existing_schedules and notify_when_schedule_is_off is not defined) -%}
+        {# notify_when_schedule_is_on: {{notify_when_schedule_is_on}}={{is_state(notify_when_schedule_is_on,'on')}} #}
+        {%- set notify_when_schedules_are_met=true if is_state(notify_when_schedule_is_on,'on') else false %}
+        {%- endif %}
+        {%- if notify_when_schedule_is_off is defined and has_value(notify_when_schedule_is_off) and notify_when_schedule_is_off in existing_schedules and notify_when_schedule_is_on is not defined -%}
+        {# notify_when_schedule_is_off: {{notify_when_schedule_is_off}}={{is_state(notify_when_schedule_is_off,'off')}} #}
+        {%- set notify_when_schedules_are_met=true if is_state(notify_when_schedule_is_off,'off') else false %}
+        {%- endif -%}
+        {%- if notify_when_schedule_is_on is defined and has_value(notify_when_schedule_is_on) and notify_when_schedule_is_off is defined and has_value(notify_when_schedule_is_off) and notify_when_schedule_is_on in existing_schedules and notify_when_schedule_is_off in existing_schedules -%}
+        {# notify_when_schedule_is_on: {{notify_when_schedule_is_on}}={{is_state(notify_when_schedule_is_on,'on')}} #}
+        {# notify_when_schedule_is_off: {{notify_when_schedule_is_off}}={{is_state(notify_when_schedule_is_off,'off')}} #}
+        {%- set notify_when_schedules_are_met=true if is_state(notify_when_schedule_is_on,'on') and is_state(notify_when_schedule_is_off,'off') else false %}
+        {%- endif -%}
+        {%- else -%}
+        {# notify_when_schedule_is_on is not defined #}
+        {# notify_when_schedule_is_off is not defined #}
+        {%- set notify_when_schedules_are_met=true %}
+        {%- endif %}
+        {# notify_when_schedules_are_met:  #}
+        {{notify_when_schedules_are_met}}
+  - variables:
       all_zones: >-
         {% set all_zones=states.zone|map(attribute='entity_id')|list -%}
         {{all_zones}}
@@ -1043,7 +1088,7 @@ sequence:
         {%- endif %}
         {{notify_devices}}
   - repeat:
-      for_each: "{{notify_devices}}"
+      for_each: "{{notify_devices if notify_when_schedules_are_met==True else []}}"
       sequence:
         - variables:
             repeat: >
